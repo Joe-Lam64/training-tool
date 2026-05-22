@@ -664,34 +664,44 @@ def api_update():
 
 @app.route("/api/email", methods=["POST"])
 @login_required
+
 def api_email():
     body = request.get_json() or {}
-    emp_name = body.get("emp_name", "")
-    emp_dept = body.get("emp_dept", "")
+    # 新版:多同仁不同部門
+    employees = body.get("employees", [])
+
+    # 向下相容:如果還有人送舊格式 (emp_name + emp_dept) 也能用
+    if not employees:
+        emp_name = body.get("emp_name", "")
+        emp_dept = body.get("emp_dept", "")
+        name_list = [n.strip() for n in re.split(r"[,，、\s]+", emp_name) if n.strip()]
+        employees = [{"name": n, "dept": emp_dept} for n in name_list]
+
+    # 過濾掉空白名字,若完全沒人就放預設
+    employees = [e for e in employees if e.get("name", "").strip()]
+    if not employees:
+        employees = [{"name": "(同仁姓名)", "dept": "(部門)"}]
+
     emp_month = body.get("emp_month", "")
     course_name = body.get("course_name", "")
     train_type = body.get("train_type", "複訓")
     selected = body.get("selected_courses", [])
     mode = body.get("mode", "external")  # "external" 給同仁 / "internal" 給後台
-    
-    # 處理多同仁姓名 (用逗號/頓號/空白分隔)
-    name_list = [n.strip() for n in re.split(r"[,，、\s]+", emp_name) if n.strip()]
-    if not name_list:
-        name_list = ["(同仁姓名)"]
-    name_display = "、".join(name_list)
-    
+
+    name_display = "、".join(e["name"] for e in employees)
     name_suffix = f"_{name_display}" if name_display and name_display != "(同仁姓名)" else ""
     subject = f"2026/{emp_month} 外訓通知(請回覆可以安排的時段)_{course_name}{name_suffix}"
+
     outline = get_course_outline(course_name or (selected[0]["name"] if selected else ""),
                                   selected[0]["hours"] if selected else "3", train_type)
-    
-    # 多同仁的話,每人一列
+
+    # 每位同仁一列,各自部門
     emp_rows = "".join(
         f'<tr><td style="border:1px solid #555;">{course_name}</td>'
-        f'<td style="border:1px solid #555;">{emp_dept}</td>'
-        f'<td style="border:1px solid #555;">{n}</td>'
+        f'<td style="border:1px solid #555;">{e["dept"] or "(未填)"}</td>'
+        f'<td style="border:1px solid #555;">{e["name"]}</td>'
         f'<td style="border:1px solid #555;">{emp_month} 月</td></tr>'
-        for n in name_list
+        for e in employees
     )
     
     # 共用開頭
@@ -1215,8 +1225,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <div style="color:#999;text-align:center;padding:10px;">尚未挑選任何課程</div>
     </div>
     <div class="form-grid">
-      <div><label>同仁姓名</label><input type="text" id="empName" placeholder="例: 藍若僑"></div>
-      <div><label>部門</label><input type="text" id="empDept" placeholder="例: 訓練單位"></div>
+  <div style="grid-column:1/-1;">
+          <label>派訓同仁(可加多人,每人各自部門)</label>
+          <div id="empList" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;"></div>
+          <button type="button" onclick="addEmployee()" style="margin-top:8px;background:#E7F3FF;border:2px dashed #3F72AF;color:#3F72AF;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">➕ 新增同仁</button>
+        </div>
+        
       <div><label>預訂月份</label><input type="number" id="empMonth" placeholder="例: 5" min="1" max="12"></div>
       <div>
         <label>參訓類別</label>
@@ -1532,15 +1546,20 @@ function escHtml(s) {
 }
 
 async function buildEmail(mode) {
+  // 收集多位同仁(每人各自部門)
+  const employees = Array.from(document.querySelectorAll('#empList .emp-row')).map(row => ({
+    name: row.querySelector('.emp-name-input').value.trim(),
+    dept: row.querySelector('.emp-dept-input').value.trim(),
+  })).filter(e => e.name);  // 過濾掉沒填名字的空列
   const body = {
-    emp_name: document.getElementById('empName').value || '(同仁姓名)',
-    emp_dept: document.getElementById('empDept').value || '(部門)',
+    employees: employees,
     emp_month: document.getElementById('empMonth').value || '(月)',
     course_name: document.getElementById('courseName').value || '(課程名稱)',
     train_type: document.getElementById('trainType').value,
     selected_courses: [...selected.values()],
     mode: mode,
   };
+
   const resp = await fetch('/api/email', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(body)
@@ -1578,6 +1597,26 @@ async function generate(mode, label) {
     toast('已複製 (HTML 原始碼)', 'success');
   }
 }
+
+// === 多同仁列表管理 ===
+function addEmployee(name = '', dept = '') {
+  const list = document.getElementById('empList');
+  const row = document.createElement('div');
+  row.className = 'emp-row';
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  row.innerHTML = `
+    <input type="text" class="emp-name-input" placeholder="姓名,例: 藍若僑" value="${escHtml(name)}" style="flex:1;">
+    <input type="text" class="emp-dept-input" placeholder="部門,例: 訓練單位" value="${escHtml(dept)}" style="flex:1;">
+    <button type="button" onclick="removeEmployee(this)" style="background:#FFE5E5;border:none;color:#C44569;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;font-weight:bold;flex-shrink:0;" title="刪除這位同仁">✕</button>
+  `;
+  list.appendChild(row);
+}
+function removeEmployee(btn) {
+  const row = btn.closest('.emp-row');
+  if (row) row.remove();
+  if (document.querySelectorAll('#empList .emp-row').length === 0) addEmployee();
+}
+addEmployee(); // 預設先放一列空的
 
 loadCourses();
 refreshOnline();
