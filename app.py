@@ -692,15 +692,17 @@ def api_email():
     name_suffix = f"_{name_display}" if name_display and name_display != "(同仁姓名)" else ""
     subject = f"2026/{emp_month} 外訓通知(請回覆可以安排的時段)_{course_name}{name_suffix}"
 
-    outline = get_course_outline(course_name or (selected[0]["name"] if selected else ""),
-                                  selected[0]["hours"] if selected else "3", train_type)
+    # 優先用挑選的課程,沒挑選才用手動輸入的「欲派訓課程名稱」
+    ref_name = selected[0]["name"] if selected else course_name
+    ref_hours = selected[0]["hours"] if selected else "3"
+    outline = get_course_outline(ref_name, ref_hours, train_type)
 
     # 每位同仁一列,各自部門
     emp_rows = "".join(
-        f'<tr><td style="border:1px solid #555;">{course_name}</td>'
-        f'<td style="border:1px solid #555;">{e["dept"] or "(未填)"}</td>'
-        f'<td style="border:1px solid #555;">{e["name"]}</td>'
-        f'<td style="border:1px solid #555;">{emp_month} 月</td></tr>'
+        f'<tr><td style="border:1px solid #BBB;">{course_name}</td>'
+        f'<td style="border:1px solid #BBB;">{e["dept"] or "(未填)"}</td>'
+        f'<td style="border:1px solid #BBB;">{e["name"]}</td>'
+        f'<td style="border:1px solid #BBB;">{emp_month} 月</td></tr>'
         for e in employees
     )
     
@@ -709,72 +711,72 @@ def api_email():
         '<div style="font-family:微軟正黑體,sans-serif;font-size:14px;color:#333;line-height:1.7;">',
         '<p>Dear All,</p>',
         f'<p>訓練單位將安排以下同仁外出訓練進行職安證照<b>{train_type}</b>課程,派訓人員名單如下:</p>',
-        '<table border="1" cellpadding="10" cellspacing="0" style="border-collapse:collapse;border:2px solid #555;margin:10px 0;">',
+        '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;border:1px solid #888;margin:10px 0;">',
         '<tr style="background:#4472C4;color:white;font-weight:bold;">',
-        '<td style="border:1px solid #555;">課程名稱</td><td style="border:1px solid #555;">部門</td>',
-        '<td style="border:1px solid #555;">姓名</td><td style="border:1px solid #555;">預訂月份</td></tr>',
+        '<td style="border:1px solid #BBB;">課程名稱</td><td style="border:1px solid #BBB;">部門</td>',
+        '<td style="border:1px solid #BBB;">姓名</td><td style="border:1px solid #BBB;">預訂月份</td></tr>',
         emp_rows,
         '</table>',
         '<p><b>📋 課程介紹:</b></p>',
-        '<table border="1" cellpadding="10" cellspacing="0" style="border-collapse:collapse;border:2px solid #555;margin:10px 0;width:100%;">',
-        f'<tr><td style="background:#E7E6E6;width:100px;border:1px solid #555;"><b>法規依據</b></td><td style="border:1px solid #555;">{outline["law"].replace(chr(10), "<br>")}</td></tr>',
-        f'<tr><td style="background:#E7E6E6;border:1px solid #555;"><b>訓練目的</b></td><td style="border:1px solid #555;">{outline["purpose"]}</td></tr>',
-        f'<tr><td style="background:#E7E6E6;vertical-align:top;border:1px solid #555;"><b>課程大綱</b></td><td style="border:1px solid #555;">{"<br>".join(outline["outline"])}</td></tr>',
+        '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;border:1px solid #888;margin:10px 0;width:100%;">',
+        f'<tr><td style="background:#E7E6E6;width:100px;border:1px solid #BBB;"><b>法規依據</b></td><td style="border:1px solid #BBB;">{outline["law"].replace(chr(10), "<br>")}</td></tr>',
+        f'<tr><td style="background:#E7E6E6;border:1px solid #BBB;"><b>訓練目的</b></td><td style="border:1px solid #BBB;">{outline["purpose"]}</td></tr>',
+        f'<tr><td style="background:#E7E6E6;vertical-align:top;border:1px solid #BBB;"><b>課程大綱</b></td><td style="border:1px solid #BBB;">{"<br>".join(outline["outline"])}</td></tr>',
         '</table>',
         '<p>再請回覆可以安排受訓的日期及時段,若以下時段不合適,再請聯繫我們,謝謝!</p>',
         '<p><b>相關課程時段如下:</b></p>',
-        '<table border="1" cellpadding="10" cellspacing="0" style="border-collapse:collapse;border:2px solid #555;margin:10px 0;">',
+        '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;border:1px solid #888;margin:10px 0;">',
     ]
     
     if mode == "external":
         # 給同仁版: 場次/主辦/日期/上課時間/上課地點/費用
         html_parts.extend([
             '<tr style="background:#4472C4;color:white;font-weight:bold;">',
-            '<td style="border:1px solid #555;">場次</td>',
-            '<td style="border:1px solid #555;">主辦單位</td>',
-            '<td style="border:1px solid #555;">日期</td>',
-            '<td style="border:1px solid #555;">上課時間</td>',
-            '<td style="border:1px solid #555;">上課地點</td>',
-            '<td style="border:1px solid #555;">費用</td></tr>',
+            '<td style="border:1px solid #BBB;">場次</td>',
+            '<td style="border:1px solid #BBB;">主辦單位</td>',
+            '<td style="border:1px solid #BBB;">日期</td>',
+            '<td style="border:1px solid #BBB;">上課時間</td>',
+            '<td style="border:1px solid #BBB;">上課地點</td>',
+            '<td style="border:1px solid #BBB;">費用</td></tr>',
         ])
         for i, c in enumerate(selected, 1):
             html_parts.append(
-                f'<tr><td style="text-align:center;border:1px solid #555;"><b>{i}</b></td>'
-                f'<td style="border:1px solid #555;">{c.get("institute","")} ({c.get("branch","")})</td>'
-                f'<td style="border:1px solid #555;">{c.get("start_date","")}</td>'
-                f'<td style="border:1px solid #555;">{c.get("class_time","")}</td>'
-                f'<td style="border:1px solid #555;">{c.get("location","")}</td>'
-                f'<td style="text-align:right;border:1px solid #555;">{c.get("fee","")} 元</td></tr>'
+                f'<tr><td style="text-align:center;border:1px solid #BBB;"><b>{i}</b></td>'
+                f'<td style="border:1px solid #BBB;">{c.get("institute","")} ({c.get("branch","")})</td>'
+                f'<td style="border:1px solid #BBB;">{c.get("start_date","")}</td>'
+                f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
+                f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
+                f'<td style="text-align:right;border:1px solid #BBB;">{c.get("fee","")} 元</td></tr>'
             )
     else:
         # 後台版: 完整資訊 + 報名連結
         html_parts.extend([
             '<tr style="background:#C00000;color:white;font-weight:bold;">',
-            '<td style="border:1px solid #555;">場次</td>',
-            '<td style="border:1px solid #555;">主辦單位</td>',
-            '<td style="border:1px solid #555;">日期</td>',
-            '<td style="border:1px solid #555;">上課時間</td>',
-            '<td style="border:1px solid #555;">上課地點</td>',
-            '<td style="border:1px solid #555;">班別</td>',
-            '<td style="border:1px solid #555;">時數</td>',
-            '<td style="border:1px solid #555;">費用</td>',
-            '<td style="border:1px solid #555;">狀態</td>',
-            '<td style="border:1px solid #555;">報名連結</td></tr>',
+            '<td style="border:1px solid #BBB;">場次</td>',
+            '<td style="border:1px solid #BBB;">主辦單位</td>',
+            '<td style="border:1px solid #BBB;">日期</td>',
+            '<td style="border:1px solid #BBB;">上課時間</td>',
+            '<td style="border:1px solid #BBB;">上課地點</td>',
+            '<td style="border:1px solid #BBB;">班別</td>',
+            '<td style="border:1px solid #BBB;">時數</td>',
+            '<td style="border:1px solid #BBB;">費用</td>',
+            '<td style="border:1px solid #BBB;">狀態</td>',
+            '<td style="border:1px solid #BBB;">報名連結</td></tr>',
         ])
         for i, c in enumerate(selected, 1):
             reg_link = c.get("register_url", "")
             link_html = f'<a href="{reg_link}" target="_blank">點此報名</a>' if reg_link else "(無連結)"
             html_parts.append(
-                f'<tr><td style="text-align:center;border:1px solid #555;"><b>{i}</b></td>'
-                f'<td style="border:1px solid #555;">{c.get("institute","")} ({c.get("branch","")})</td>'
-                f'<td style="border:1px solid #555;">{c.get("start_date","")}</td>'
-                f'<td style="border:1px solid #555;">{c.get("class_time","")}</td>'
-                f'<td style="border:1px solid #555;">{c.get("location","")}</td>'
-                f'<td style="text-align:center;border:1px solid #555;">{c.get("class_type","")}</td>'
-                f'<td style="text-align:center;border:1px solid #555;">{c.get("hours","")} 小時</td>'
-                f'<td style="text-align:right;border:1px solid #555;">{c.get("fee","")} 元</td>'
-                f'<td style="text-align:center;border:1px solid #555;">{c.get("status","")}</td>'
-                f'<td style="border:1px solid #555;">{link_html}</td></tr>'
+                f'<tr><td style="text-align:center;border:1px solid #BBB;"><b>{i}</b></td>'
+                f'<td style="border:1px solid #BBB;">{c.get("institute","")} ({c.get("branch","")})</td>'
+                f'<td style="border:1px solid #BBB;">{c.get("start_date","")}</td>'
+                f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
+                f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
+                f'<td style="text-align:center;border:1px solid #BBB;">{c.get("class_type","")}</td>'
+                f'<td style="text-align:center;border:1px solid #BBB;">{c.get("hours","")} 小時</td>'
+                f'<td style="text-align:right;border:1px solid #BBB;">{c.get("fee","")} 元</td>'
+                f'<td style="text-align:center;border:1px solid #BBB;">{c.get("status","")}</td>'
+                f'<td style="border:1px solid #BBB;">{link_html}</td></tr>'
             )
     
     html_parts.extend(['</table>', '<p>敬請回覆,謝謝!</p>', '</div>'])
@@ -900,7 +902,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   }
   .logout-btn:hover { background: var(--lavender); }
   
-  .container { max-width: 1500px; margin: 0 auto; padding: 20px; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 20px 40px; }
   
   /* === Cards === */
   .card {
