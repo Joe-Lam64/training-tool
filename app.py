@@ -1601,32 +1601,40 @@ if __name__ == "__main__":
     print("=" * 60)
     print("  外訓課程自動整合工具")
     print("=" * 60)
-    init_db()
+    
+    try:
+        init_db()
+        print("  [OK] 資料庫初始化完成")
+    except Exception as e:
+        print(f"  [ERROR] 資料庫初始化失敗: {e}")
+        import traceback
+        traceback.print_exc()
     
     # 本機才產生「密碼.txt」(雲端不需要,因為沒人看得到雲端檔案)
     if not is_cloud:
-        pwd_file = APP_DIR / "密碼.txt"
-        if not pwd_file.exists():
-            with open(pwd_file, "w", encoding="utf-8") as f:
-                f.write("【外訓課程整合工具 - 帳號密碼】\n")
-                f.write("=" * 40 + "\n\n")
-                f.write("⚠️  此檔案請勿給其他人看!\n\n")
-                for u in DEFAULT_USERS:
-                    f.write(f"帳號: {u['username']}\n")
-                    f.write(f"密碼: {u['password']}\n")
-                    f.write(f"角色: {u['display_name']} ({u['role']})\n")
-                    f.write("-" * 40 + "\n")
-            print(f"  ✓ 已產生 [密碼.txt] (請妥善保管)")
+        try:
+            pwd_file = APP_DIR / "密碼.txt"
+            if not pwd_file.exists():
+                with open(pwd_file, "w", encoding="utf-8") as f:
+                    f.write("【外訓課程整合工具 - 帳號密碼】\n")
+                    f.write("=" * 40 + "\n\n")
+                    f.write("⚠️  此檔案請勿給其他人看!\n\n")
+                    for u in DEFAULT_USERS:
+                        f.write(f"帳號: {u['username']}\n")
+                        f.write(f"密碼: {u['password']}\n")
+                        f.write(f"角色: {u['display_name']} ({u['role']})\n")
+                        f.write("-" * 40 + "\n")
+                print(f"  [OK] 已產生 [密碼.txt] (請妥善保管)")
+        except Exception as e:
+            print(f"  [WARN] 無法寫入密碼.txt (略過): {e}")
     
-    print("  ✓ 資料庫初始化完成")
     print("")
     if is_cloud:
-        print(f"  ☁️  雲端模式啟動,監聽 port {port}")
+        print(f"  [Cloud] 雲端模式啟動,監聽 port {port}")
     else:
         print(f"  伺服器啟動中... http://localhost:{port}")
-        print(f"  ✦ 同事連線網址: http://[你的 IP]:{port}")
-        print(f"    (查你的 IP: 開新 cmd → 輸入 ipconfig)")
-        print("")
+        print(f"  同事連線網址: http://[你的 IP]:{port}")
+        print(f"  (查你的 IP: 開新 cmd → 輸入 ipconfig)")
         print(f"  關閉程式: 按 Ctrl+C 或關閉此視窗")
     print("=" * 60)
     
@@ -1635,3 +1643,14 @@ if __name__ == "__main__":
         threading.Thread(target=open_browser, daemon=True).start()
     
     app.run(host="0.0.0.0", port=port, debug=False)
+
+
+# 雲端 (gunicorn) 不會跑 if __name__ == "__main__",所以下面這段是雲端用的
+# gunicorn 直接 import app:app,需要先初始化 DB
+try:
+    init_db()
+    print("[Cloud Init] 雲端模式,資料庫初始化完成")
+except Exception as e:
+    print(f"[Cloud Init ERROR] {e}")
+    import traceback
+    traceback.print_exc()
