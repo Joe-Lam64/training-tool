@@ -692,10 +692,8 @@ def api_email():
     name_suffix = f"_{name_display}" if name_display and name_display != "(同仁姓名)" else ""
     subject = f"2026/{emp_month} 外訓通知(請回覆可以安排的時段)_{course_name}{name_suffix}"
 
-    # 優先用挑選的課程,沒挑選才用手動輸入的「欲派訓課程名稱」
-    ref_name = selected[0]["name"] if selected else course_name
-    ref_hours = selected[0]["hours"] if selected else "3"
-    outline = get_course_outline(ref_name, ref_hours, train_type)
+ outline = get_course_outline(course_name or (selected[0]["name"] if selected else ""),
+                                  selected[0]["hours"] if selected else "3", train_type)
 
     # 每位同仁一列,各自部門
     emp_rows = "".join(
