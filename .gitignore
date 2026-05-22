@@ -1,0 +1,23 @@
+# Python 編譯檔
+__pycache__/
+*.pyc
+*.pyo
+
+# 本機資料庫 (雲端會另外管理)
+*.db
+users.db
+course_data.json
+
+# 密碼檔 (絕對不能上 GitHub!)
+密碼.txt
+password.txt
+
+# 系統檔
+.DS_Store
+Thumbs.db
+*.log
+
+# 編輯器
+.vscode/
+.idea/
+*.swp
