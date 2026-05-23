@@ -643,7 +643,7 @@ class CPCScraper:
         display_name = f"{name} {subtitle}".strip() if subtitle else name
 
         return {
-            "id": f"cpc-{code_}",
+            "institute": "中國生產力中心", "id": f"cpc-{code_}",
             "code": code_,
             "name": display_name,
             "branch": region,
@@ -651,13 +651,13 @@ class CPCScraper:
             "nationality": nationality,
             "start_date": start_date,
             "end_date": end_date,
-            "weekday_time": weekday_time,
+            "class_time": weekday_time,
             "class_type": day_type,
             "hours": hours,
             "fee": "",
             "status": status,
             "deadline": deadline,
-            "link": link,
+            "register_url": link,
             "location": "",
             "source": "cpc",
         }
@@ -741,9 +741,9 @@ class CPCScraper:
 
             def grab_detail(course):
                 try:
-                    r = session.get(course["link"], timeout=20)
+                    r = session.get(course["register_url"], timeout=20)
                     addr, fee = cls._parse_detail(r.text)
-                    course["address"] = addr
+                    course["location"] = addr
                     course["fee"] = fee
                 except Exception as e:
                     print(f"  [CPC] detail {course['code']} 失敗: {e}")
