@@ -500,7 +500,7 @@ class TichaScraper:
                         "id": f"{cls.code}_{branch}_{course_id or seq + '_' + start_date}",
                         "course_id": course_id,
                         "institute": cls.name, "branch": branch, "category": category,
-                        "nationality": nationality, "name": name, "start_date": start_date,
+                        "nationality": nationality, "name": name, "start_date": start_date + (f"({weekday_time[0]})" if weekday_time and '\u4e00' <= weekday_time[0] <= '\u9fff' else ""),
                         "end_date": end_date, "class_type": class_type, "class_time": class_time,
                         "location": location, "hours": hours, "fee": fee, "status": status,
                         "url": url, "register_url": register_url,
@@ -649,9 +649,9 @@ class CPCScraper:
             "branch": region,
             "category": category,
             "nationality": nationality,
-            "start_date": start_date,
+            "start_date": start_date + (f"({weekday_time[0]})" if weekday_time and '\u4e00' <= weekday_time[0] <= '\u9fff' else ""),
             "end_date": end_date,
-            "class_time": _re.sub(r"^\D+", "", weekday_time),
+            "class_time": _re.sub(r"(\d+):(\d+)-(\d+):(\d+)", lambda m: f"{'上午' if int(m.group(1))<12 else '下午'} {int(m.group(1))}:{m.group(2)} - {'上午' if int(m.group(3))<12 else '下午'} {int(m.group(3))}:{m.group(4)}", _re.sub(r"^\D+", "", weekday_time)),
             "class_type": day_type,
             "hours": hours,
             "fee": "",
@@ -695,7 +695,7 @@ class CPCScraper:
                 soup1 = cls._fetch_page(session, cat_id, 1)
                 last = cls._last_page(soup1)
                 page_jobs.append((cat_id, 1, soup1))
-                for p in range(2, last + 1):
+                for p in range(2, min(last + 1, 6)):
                     page_jobs.append((cat_id, p, None))
                 print(f"  [CPC] {cat_name}(類別 {cat_id}) 共 {last} 頁")
             except Exception as e:
