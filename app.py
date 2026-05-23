@@ -510,11 +510,6 @@ class TichaScraper:
         return courses
 
 
-SCRAPERS = {
-    "ticsha": TichaScraper,
-    "cpc": CPCScraper,
-}
-
 # =========================================================
 # 解析器 #2:中國生產力中心 (CPC)
 # =========================================================
@@ -762,7 +757,11 @@ class CPCScraper:
         cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
         print(f"  [CPC] 完成,共 {len(all_courses)} 堂課(桃園+台北)")
         return all_courses
-      
+
+SCRAPERS = {
+    "ticsha": TichaScraper,
+    "cpc": CPCScraper,
+}
 
 def load_data():
     if DATA_FILE.exists():
