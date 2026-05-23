@@ -651,7 +651,7 @@ class CPCScraper:
             "nationality": nationality,
             "start_date": start_date,
             "end_date": end_date,
-            "class_time": weekday_time,
+            "class_time": _re.sub(r"^\D+", "", weekday_time),
             "class_type": day_type,
             "hours": hours,
             "fee": "",
@@ -723,7 +723,7 @@ class CPCScraper:
                 print(f"  [CPC] page {cat_id}/{p} 失敗: {e}")
                 return []
 
-        with ThreadPoolExecutor(max_workers=6) as pool:
+        with ThreadPoolExecutor(max_workers=12) as pool:
             for idx, page_rows in enumerate(pool.map(grab_page, page_jobs)):
                 cls._progress["current"] = idx + 1
                 cls._progress["message"] = f"CPC 掃描列表 {idx+1}/{len(page_jobs)}..."
@@ -749,7 +749,7 @@ class CPCScraper:
                     print(f"  [CPC] detail {course['code']} 失敗: {e}")
                 return course
 
-            with ThreadPoolExecutor(max_workers=8) as pool:
+            with ThreadPoolExecutor(max_workers=15) as pool:
                 for idx, _ in enumerate(pool.map(grab_detail, all_courses)):
                     cls._progress["current"] = idx + 1
                     cls._progress["message"] = f"抓 CPC 詳細 {idx+1}/{len(all_courses)}..."
