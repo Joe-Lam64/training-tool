@@ -536,7 +536,7 @@ class CPCScraper:
     @classmethod
     def _make_session(cls):
         import requests
-        s = requests.Session()
+        s = requests.Session(); s.verify = False
         s.headers.update({
             "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                            "AppleWebKit/537.36 (KHTML, like Gecko) "
