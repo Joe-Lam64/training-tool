@@ -716,7 +716,7 @@ class CPCScraper:
                 if table:
                     for tr in table.find_all("tr")[1:]:  # 跳過表頭
                         c = cls._parse_row(tr)
-                        if c and any(r in c["region"] for r in cls.target_regions):
+                        if c and any(r in c["branch"] for r in cls.target_regions):
                             rows.append(c)
                 return rows
             except Exception as e:
