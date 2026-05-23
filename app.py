@@ -776,12 +776,12 @@ def save_data(data):
 
 
 def update_courses(codes):
-    all_courses = []
+    all_courses = [c for c in load_data().get("courses", []) if c.get("_scraper_code") not in codes]
     for code in codes:
         if code in SCRAPERS:
             scraper = SCRAPERS[code]
             print(f"\n=== 更新 {scraper.name} ===")
-            all_courses.extend(scraper.scrape())
+            all_courses.extend([{**c, "_scraper_code": code} for c in scraper.scrape()])
     data = {"courses": all_courses, "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
     save_data(data)
     return data
