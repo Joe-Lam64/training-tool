@@ -548,9 +548,9 @@ class CPCScraper:
     @classmethod
     def _fetch_page(cls, session, cat_id, page=1):
         import re as _re
-        url = f"{cls.base_url}/Train/Category/{cat_id}"
+        from datetime import datetime as _dt, timedelta as _td; _t = _dt.now(); url = f"{cls.base_url}/Train/Category/{cat_id}?StartDate={_t.strftime('%Y%m%d')}&EndDate={(_t + _td(days=90)).strftime('%Y%m%d')}"
         if page > 1:
-            url += f"?page={page}"
+            url += f"&page={page}"
         resp = session.get(url, timeout=20)
         resp.raise_for_status()
         return BeautifulSoup(resp.content, "html.parser")
