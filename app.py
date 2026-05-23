@@ -500,7 +500,7 @@ class TichaScraper:
                         "id": f"{cls.code}_{branch}_{course_id or seq + '_' + start_date}",
                         "course_id": course_id,
                         "institute": cls.name, "branch": branch, "category": category,
-                        "nationality": nationality, "name": name, "start_date": start_date + (f"({weekday_time[0]})" if weekday_time and '\u4e00' <= weekday_time[0] <= '\u9fff' else ""),
+                        "nationality": nationality, "name": name, "start_date": start_date,
                         "end_date": end_date, "class_type": class_type, "class_time": class_time,
                         "location": location, "hours": hours, "fee": fee, "status": status,
                         "url": url, "register_url": register_url,
@@ -585,7 +585,7 @@ class CPCScraper:
         a = tds[1].find("a")
         if not a:
             return None
-        link = a.get("href", "")
+        link = a.get("href", ""); link = "https://store.cpc.org.tw" + link if link.startswith("/Train/") else link
         title_attr = a.get("title", "").strip()
         m = _re.match(r"^(\S+)\s+(.+)$", title_attr)
         if m:
@@ -649,7 +649,7 @@ class CPCScraper:
             "branch": region,
             "category": category,
             "nationality": nationality,
-            "start_date": start_date + (f"({weekday_time[0]})" if weekday_time and '\u4e00' <= weekday_time[0] <= '\u9fff' else ""),
+            "start_date": start_date,
             "end_date": end_date,
             "class_time": _re.sub(r"(\d+):(\d+)-(\d+):(\d+)", lambda m: f"{'上午' if int(m.group(1))<12 else '下午'} {int(m.group(1))}:{m.group(2)} - {'上午' if int(m.group(3))<12 else '下午'} {int(m.group(3))}:{m.group(4)}", _re.sub(r"^\D+", "", weekday_time)),
             "class_type": day_type,
