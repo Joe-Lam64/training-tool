@@ -676,7 +676,7 @@ class CPCScraper:
                 address = " ".join(td.get_text(separator=" ", strip=True).split())
                 break
         ps = soup.select_one("span.text-red.lead")
-        if ps:
+        if (ps := soup.select_one("span.text-red.lead")):
             fee = ps.get_text(strip=True).replace(",", "")
         return address, fee
 
@@ -695,7 +695,7 @@ class CPCScraper:
                 soup1 = cls._fetch_page(session, cat_id, 1)
                 last = cls._last_page(soup1)
                 page_jobs.append((cat_id, 1, soup1))
-                for p in range(2, min(last + 1, 6)):
+                for p in range(2, last + 1):
                     page_jobs.append((cat_id, p, None))
                 print(f"  [CPC] {cat_name}(類別 {cat_id}) 共 {last} 頁")
             except Exception as e:
