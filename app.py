@@ -643,7 +643,7 @@ class CPCScraper:
         display_name = f"{name} {subtitle}".strip() if subtitle else name
 
         return {
-            "institute": "中國生產力中心", "id": f"cpc-{code_}",
+            "id": f"cpc-{code_}",
             "code": code_,
             "name": display_name,
             "branch": region,
@@ -651,13 +651,13 @@ class CPCScraper:
             "nationality": nationality,
             "start_date": start_date,
             "end_date": end_date,
-            "class_time": weekday_time,
+            "weekday_time": weekday_time,
             "class_type": day_type,
             "hours": hours,
             "fee": "",
             "status": status,
             "deadline": deadline,
-            "register_url": link,
+            "link": link,
             "location": "",
             "source": "cpc",
         }
@@ -675,23 +675,10 @@ class CPCScraper:
             if th.get_text(strip=True) == "上課地點":
                 address = " ".join(td.get_text(separator=" ", strip=True).split())
                 break
-
-        # 抓費用(span.text-red.lead 是 CPC 用的定價標記)
         ps = soup.select_one("span.text-red.lead")
         if ps:
             fee = ps.get_text(strip=True).replace(",", "")
-
-        # 抓狀態(列表頁有些課沒徽章,從詳細頁的 h4>p.text-primary 補)
-        status = ""
-        for p in soup.select("h4 p.text-primary"):
-            txt = p.get_text(strip=True)
-            for kw in ("確定開課", "招生中", "已截止", "已額滿", "完成報名"):
-                if kw in txt:
-                    status = kw
-                    break
-            if status:
-                break
-        return address, fee, status
+        return address, fee
 
     @classmethod
     def scrape(cls, fetch_details=True):
@@ -752,14 +739,12 @@ class CPCScraper:
                 "message": f"抓 CPC 課程詳細資料 0/{len(all_courses)}..."
             }
 
-             def grab_detail(course):
+            def grab_detail(course):
                 try:
-                    r = session.get(course["register_url"], timeout=20)
-                    addr, fee, status = cls._parse_detail(r.text)
-                    course["location"] = addr
+                    r = session.get(course["link"], timeout=20)
+                    addr, fee = cls._parse_detail(r.text)
+                    course["address"] = addr
                     course["fee"] = fee
-                    if not course.get("status"):  # 列表頁沒抓到狀態才用詳細頁的
-                        course["status"] = status
                 except Exception as e:
                     print(f"  [CPC] detail {course['code']} 失敗: {e}")
                 return course
