@@ -662,7 +662,7 @@ class CPCScraper:
             "source": "cpc",
         }
 
-   @classmethod
+    @classmethod
     def _parse_detail(cls, html):
         soup = BeautifulSoup(html, "html.parser")
         address = ""
