@@ -319,7 +319,7 @@ class TichaScraper:
     
     # 進度追蹤 (給前端讀取)
     _progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
-    
+  
     @classmethod
     def get_progress(cls):
         return dict(cls._progress)
@@ -510,8 +510,259 @@ class TichaScraper:
         return courses
 
 
-SCRAPERS = {"ticsha": TichaScraper}
+SCRAPERS = {
+    "ticsha": TichaScraper,
+    "cpc": CPCScraper,
+}
 
+# =========================================================
+# 解析器 #2:中國生產力中心 (CPC)
+# =========================================================
+class CPCScraper:
+    name = "中國生產力中心"
+    code = "cpc"
+    base_url = "https://store.cpc.org.tw"
+    # 3 個類別:職安(110) + 消防(111) + 營建(112)
+    categories = {
+        "職安": 110,
+        "消防": 111,
+        "營建": 112,
+    }
+    # 只保留這 2 個地區
+    target_regions = {"桃園", "台北"}
+
+    # 進度追蹤 (給前端讀取)
+    _progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+
+    @classmethod
+    def get_progress(cls):
+        return dict(cls._progress)
+
+    @classmethod
+    def _make_session(cls):
+        import requests
+        s = requests.Session()
+        s.headers.update({
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                           "Chrome/118.0.0.0 Safari/537.36"),
+            "Accept-Language": "zh-TW,zh;q=0.9",
+        })
+        return s
+
+    @classmethod
+    def _fetch_page(cls, session, cat_id, page=1):
+        import re as _re
+        url = f"{cls.base_url}/Train/Category/{cat_id}"
+        if page > 1:
+            url += f"?page={page}"
+        resp = session.get(url, timeout=20)
+        resp.raise_for_status()
+        return BeautifulSoup(resp.content, "html.parser")
+
+    @classmethod
+    def _last_page(cls, soup):
+        import re as _re
+        pag = soup.find("ul", class_="pagination")
+        if not pag:
+            return 1
+        for a in pag.find_all("a"):
+            if "最後一頁" in a.get_text():
+                m = _re.search(r"page=(\d+)", a.get("href", ""))
+                if m:
+                    return int(m.group(1))
+        return 1
+
+    @classmethod
+    def _parse_row(cls, tr):
+        import re as _re
+        tds = tr.find_all("td", recursive=False)
+        if len(tds) < 4:
+            return None
+        region_badge = tds[0].find("span", class_="badge")
+        if not region_badge:
+            return None
+        region = region_badge.get_text(strip=True)
+
+        status_badge = tds[1].find("span", class_="badge")
+        status = status_badge.get_text(strip=True) if status_badge else ""
+
+        a = tds[1].find("a")
+        if not a:
+            return None
+        link = a.get("href", "")
+        title_attr = a.get("title", "").strip()
+        m = _re.match(r"^(\S+)\s+(.+)$", title_attr)
+        if m:
+            code_, name = m.group(1), m.group(2)
+        else:
+            code_, name = "", title_attr
+
+        small = a.find("small")
+        subtitle = " ".join(small.get_text(separator=" ", strip=True).split()) if small else ""
+
+        deadline = ""
+        for s in tds[1].find_all("small"):
+            txt = s.get_text(strip=True)
+            if "報名截止日" in txt:
+                dm = _re.search(r"(\d{4}-\d{2}-\d{2})", txt)
+                if dm:
+                    deadline = dm.group(1)
+
+        hours = tds[2].get_text(strip=True)
+
+        td4_text = " ".join(tds[3].get_text(separator=" ", strip=True).split())
+        dm = _re.match(r"(\d{4}-\d{2}-\d{2})~(\d{4}-\d{2}-\d{2})\s*(?:\(([^)]+)\))?", td4_text)
+        if dm:
+            start_date = dm.group(1)
+            end_date = dm.group(2)
+            weekday_time = (dm.group(3) or "").strip()
+        else:
+            start_date = end_date = ""
+            weekday_time = td4_text
+
+        full = name + " " + subtitle + " " + weekday_time
+        time_m = _re.search(r"(\d{1,2}):\d{2}", weekday_time)
+        if "夜" in full:
+            day_type = "夜間班"
+        elif time_m and int(time_m.group(1)) >= 17:
+            day_type = "夜間班"
+        elif "假日" in full or any(d in weekday_time for d in ["六", "日"]):
+            day_type = "假日班"
+        else:
+            day_type = "日間班"
+
+        nm = name + subtitle
+        if "回訓" in nm or "在職" in nm:
+            category = "複訓"
+        elif "初訓" in nm:
+            category = "初訓"
+        else:
+            category = "—"
+
+        if any(kw in name for kw in ("移工", "外籍", "越南", "菲律賓", "印尼", "泰")):
+            nationality = "外籍"
+        else:
+            nationality = "本國籍"
+
+        display_name = f"{name} {subtitle}".strip() if subtitle else name
+
+        return {
+            "id": f"cpc-{code_}",
+            "code": code_,
+            "name": display_name,
+            "branch": region,
+            "category": category,
+            "nationality": nationality,
+            "start_date": start_date,
+            "end_date": end_date,
+            "weekday_time": weekday_time,
+            "class_type": day_type,
+            "hours": hours,
+            "fee": "",
+            "status": status,
+            "deadline": deadline,
+            "link": link,
+            "location": "",
+            "source": "cpc",
+        }
+
+    @classmethod
+    def _parse_detail(cls, html):
+        soup = BeautifulSoup(html, "html.parser")
+        address = ""
+        fee = ""
+        for tr in soup.find_all("tr"):
+            th = tr.find("th")
+            td = tr.find("td")
+            if not th or not td:
+                continue
+            if th.get_text(strip=True) == "上課地點":
+                address = " ".join(td.get_text(separator=" ", strip=True).split())
+                break
+        ps = soup.select_one("span.text-red.lead")
+        if ps:
+            fee = ps.get_text(strip=True).replace(",", "")
+        return address, fee
+
+    @classmethod
+    def scrape(cls, fetch_details=True):
+        """抓 CPC 3 個類別,自動過濾桃園+台北,並補上詳細頁的地址+費用。"""
+        from concurrent.futures import ThreadPoolExecutor
+
+        session = cls._make_session()
+        cls._progress = {"stage": "list", "current": 0, "total": 0, "message": "CPC 正在掃描列表..."}
+
+        # 階段 1:預掃每個類別第 1 頁,得知總頁數
+        page_jobs = []  # 元素是 (cat_id, page_num, 預抓好的 soup 或 None)
+        for cat_name, cat_id in cls.categories.items():
+            try:
+                soup1 = cls._fetch_page(session, cat_id, 1)
+                last = cls._last_page(soup1)
+                page_jobs.append((cat_id, 1, soup1))
+                for p in range(2, last + 1):
+                    page_jobs.append((cat_id, p, None))
+                print(f"  [CPC] {cat_name}(類別 {cat_id}) 共 {last} 頁")
+            except Exception as e:
+                print(f"  [CPC] 抓 {cat_name} 失敗: {e}")
+
+        cls._progress["total"] = len(page_jobs)
+
+        # 階段 2:並行抓所有列表頁,套地區過濾
+        all_courses = []
+        seen_ids = set()
+
+        def grab_page(job):
+            cat_id, p, prefetched = job
+            try:
+                soup = prefetched if prefetched is not None else cls._fetch_page(session, cat_id, p)
+                rows = []
+                table = soup.find("table", class_="table table-hover")
+                if table:
+                    for tr in table.find_all("tr")[1:]:  # 跳過表頭
+                        c = cls._parse_row(tr)
+                        if c and any(r in c["region"] for r in cls.target_regions):
+                            rows.append(c)
+                return rows
+            except Exception as e:
+                print(f"  [CPC] page {cat_id}/{p} 失敗: {e}")
+                return []
+
+        with ThreadPoolExecutor(max_workers=6) as pool:
+            for idx, page_rows in enumerate(pool.map(grab_page, page_jobs)):
+                cls._progress["current"] = idx + 1
+                cls._progress["message"] = f"CPC 掃描列表 {idx+1}/{len(page_jobs)}..."
+                for c in page_rows:
+                    if c["id"] not in seen_ids:
+                        seen_ids.add(c["id"])
+                        all_courses.append(c)
+
+        # 階段 3:對篩選後的課程抓詳細頁拿地址+費用
+        if fetch_details and all_courses:
+            cls._progress = {
+                "stage": "details", "current": 0, "total": len(all_courses),
+                "message": f"抓 CPC 課程詳細資料 0/{len(all_courses)}..."
+            }
+
+            def grab_detail(course):
+                try:
+                    r = session.get(course["link"], timeout=20)
+                    addr, fee = cls._parse_detail(r.text)
+                    course["address"] = addr
+                    course["fee"] = fee
+                except Exception as e:
+                    print(f"  [CPC] detail {course['code']} 失敗: {e}")
+                return course
+
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                for idx, _ in enumerate(pool.map(grab_detail, all_courses)):
+                    cls._progress["current"] = idx + 1
+                    cls._progress["message"] = f"抓 CPC 詳細 {idx+1}/{len(all_courses)}..."
+
+        cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+        print(f"  [CPC] 完成,共 {len(all_courses)} 堂課(桃園+台北)")
+        return all_courses
+      
 
 def load_data():
     if DATA_FILE.exists():
@@ -1143,6 +1394,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <div class="desc">中壢 · 桃園 · 新竹 三個分會</div>
         </div>
       </label>
+         <label class="inst-card checked" id="instCpc" onclick="toggleInst('cpc')">
+          <input type="checkbox" id="instCheckCpc" checked>
+          <div>
+            <div class="label">中國生產力中心 (CPC)</div>
+            <div class="desc">桃園 · 台北承德 / 職安·消防·營建 三類</div>
+          </div>
+        </label>
       <button class="btn-primary" onclick="startUpdate()">🔄 立即更新</button>
     </div>
     <div class="info-line" id="lastUpdate">尚未抓取</div>
@@ -1430,10 +1688,21 @@ async function startUpdate() {
   }, 1000);
   
   try {
+// 收集所有勾選的協會
+    const scraperCodes = [];
+    if (document.getElementById('instTicsha').classList.contains('checked')) scraperCodes.push('ticsha');
+    if (document.getElementById('instCpc').classList.contains('checked')) scraperCodes.push('cpc');
+    if (scraperCodes.length === 0) {
+      toast('請至少勾選一個協會', 'error');
+      clearInterval(progressTimer);
+      hideLoading();
+      return;
+    }
     const resp = await fetch('/api/update', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({scrapers: ['ticsha']})
+      body: JSON.stringify({scrapers: scraperCodes})
     });
+    
     if (resp.status === 401) { window.location.href = '/login'; return; }
     const data = await resp.json();
     if (data.ok) {
