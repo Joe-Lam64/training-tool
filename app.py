@@ -769,7 +769,7 @@ class ISHAScraper:
     detail_url_tpl = "https://isha.org.tw/Msite/tech/serch_inner.aspx?WorkLogID={}"
 
     # 北區 5 個職訓中心
-    # key = 必須跟 ISHA 下拉選單字面完全一致 (給 POST 用)
+    # key = ISHA 下拉選單裡可能的「顯示文字」(用來查 option value);會做模糊比對
     # value = 簡稱 (給 branch 欄位顯示用,跟 Ticsha/CPC 統一)
     target_stations = {
         "台北職訓中心": "台北",
@@ -779,7 +779,7 @@ class ISHAScraper:
         "新竹區職業訓練中心": "新竹",
     }
 
-    # 進度追蹤 (給前端讀取)
+    # 進度追蹤
     _progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
 
     @classmethod
@@ -791,7 +791,6 @@ class ISHAScraper:
     # -----------------------------------------------------
     @classmethod
     def _make_session(cls):
-        """建立 Session,關掉 SSL 驗證(台灣協會網站常見憑證問題)+ 抑制警告"""
         import urllib3 as _isha_urllib3
         _isha_urllib3.disable_warnings(_isha_urllib3.exceptions.InsecureRequestWarning)
         s = requests.Session()
@@ -814,13 +813,54 @@ class ISHAScraper:
         return d
 
     @classmethod
-    def _find_ddl_name(cls, soup, sample_option):
-        """依選項文字找出 <select> 的 name (ASP.NET 名稱通常是 ctl00$...$ddlSite 之類)"""
+    def _find_station_dropdown(cls, soup):
+        """找站別下拉。回傳 (ddl_name, [(text, value), ...])
+        用「至少包含 3 個站別名稱」當特徵識別,避免誤抓到課程分類等其他下拉。
+        """
+        best = None
         for sel in soup.find_all("select"):
-            opts = [o.get_text(strip=True) for o in sel.find_all("option")]
-            if any(sample_option in o for o in opts):
-                return sel.get("name", "")
-        return None
+            opts = sel.find_all("option")
+            pairs = [(o.get_text(strip=True), o.get("value", "")) for o in opts]
+            texts = " ".join(t for t, v in pairs)
+            score = sum(1 for kw in ("台北", "新北", "桃園", "新竹", "高雄", "台中") if kw in texts)
+            if score >= 3:
+                if best is None or score > best[0]:
+                    best = (score, sel.get("name", ""), pairs)
+        if best:
+            return best[1], best[2]
+        return "", []
+
+    @classmethod
+    def _match_station_value(cls, pairs, want):
+        """從 [(text, value), ...] 中找出 want 對應的 option value
+        容錯比對 (網站文字可能跟我們寫的略不同):
+        1. 完全匹配
+        2. 包含匹配
+        3. 前 2 字 (台北/新北/...) + 括號內容比對
+        回傳 (value, matched_text);找不到回 (None, None)
+        """
+        # 1. 完全匹配
+        for text, value in pairs:
+            if text == want:
+                return value, text
+        # 2. 雙向包含
+        for text, value in pairs:
+            if want in text or text in want:
+                return value, text
+        # 3. 前 2 字 + 括號
+        short = want[:2]
+        bracket = ""
+        if "(" in want and ")" in want:
+            bracket = want[want.index("("):want.index(")") + 1]
+        for text, value in pairs:
+            if short in text:
+                if bracket:
+                    if bracket in text:
+                        return value, text
+                else:
+                    if "(" not in text:
+                        return value, text
+        return None, None
 
     @classmethod
     def _roc_to_west(cls, s):
@@ -835,8 +875,10 @@ class ISHAScraper:
     # 列表頁解析
     # -----------------------------------------------------
     @classmethod
-    def _parse_list(cls, soup, default_branch=""):
-        """從列表頁的 HTML 解析所有課程列。容錯版:遇不到的欄位留空字串。"""
+    def _parse_list(cls, soup):
+        """從列表頁的 HTML 解析所有課程列。branch 是從頁面文字「站別:XXX」解析出的原始值。
+        客戶端 filter 由呼叫者用 branch 比對「台北/新北/桃園/中壢/新竹」。
+        """
         results = []
         seen_wid = set()
         for a in soup.find_all("a", href=True):
@@ -849,16 +891,15 @@ class ISHAScraper:
                 continue
             seen_wid.add(wid)
 
-            # 把該 <a> 內所有文字攤平,用 "|" 區隔便於切片
             block = a.get_text(separator="|", strip=True)
             parts = [p.strip() for p in block.split("|") if p.strip()]
             if not parts:
                 continue
-            name = parts[0]  # 第一段一般是課程名 (含【】prefix)
+            name = parts[0]
 
             status = ""
             class_type = ""
-            station = default_branch
+            station = ""
             hours = ""
             cat_raw = ""
             start_date = ""
@@ -873,15 +914,15 @@ class ISHAScraper:
                             break
                 if not class_type and p in ("日間班", "夜間班", "假日班"):
                     class_type = p
-                if "站別" in p and re.search(r"[：:]", p):
-                    station = re.split(r"[：:]", p, 1)[-1].strip()
+                if "站別" in p and re.search(r"[:：]", p):
+                    station = re.split(r"[:：]", p, 1)[-1].strip()
                 if "課程時數" in p:
                     hm = re.search(r"(\d+\.?\d*)", p)
                     if hm:
                         hours = hm.group(1)
                 if "初/在職" in p or "初訓" in p or "在職" in p:
-                    if "：" in p or ":" in p:
-                        cat_raw = re.split(r"[：:]", p, 1)[-1].strip()
+                    if ":" in p or "：" in p:
+                        cat_raw = re.split(r"[:：]", p, 1)[-1].strip()
                     else:
                         cat_raw = p
                 if "開課日期" in p or re.search(r"\d{7}\s*[-~]\s*\d{7}", p):
@@ -898,18 +939,15 @@ class ISHAScraper:
                     if fm:
                         fee = fm.group(1).replace(",", "")
 
-            # 補完報名連結
             if href.startswith("http"):
                 reg = href
             else:
                 reg = cls.base_url + ("" if href.startswith("/") else "/") + href
 
-            # 國籍偵測 (從 title)
             nat = "外國籍" if any(k in name for k in
                 ("越南", "印尼", "菲律賓", "泰國", "外籍", "外國", "Vietnam", "Indonesia")
             ) else "本國籍"
 
-            # category 對應 ("初訓" → 初訓,"在職" → 複訓,其他 → "—")
             if "初訓" in cat_raw:
                 category = "初訓"
             elif "在職" in cat_raw:
@@ -917,7 +955,6 @@ class ISHAScraper:
             else:
                 category = cat_raw or "—"
 
-            # class_type 推測 (若列表沒明確標)
             if not class_type:
                 if "夜" in name:
                     class_type = "夜間班"
@@ -931,19 +968,19 @@ class ISHAScraper:
                 "id": f"isha-{wid}",
                 "code": wid,
                 "name": name,
-                "branch": station,
+                "branch": station,   # 原始站別文字 (例如「台北職訓中心」),呼叫者再簡化
                 "category": category,
                 "nationality": nat,
                 "start_date": start_date,
                 "end_date": end_date,
                 "class_type": class_type,
-                "class_time": "",  # 由詳細頁補
+                "class_time": "",
                 "hours": hours,
                 "fee": fee,
                 "status": status,
                 "deadline": "",
                 "register_url": reg,
-                "location": "",   # 由詳細頁補
+                "location": "",
                 "source": "isha",
                 "work_log_id": wid,
             })
@@ -954,7 +991,6 @@ class ISHAScraper:
     # -----------------------------------------------------
     @classmethod
     def _fetch_detail(cls, session, course):
-        """補上 location / class_time / deadline / fee(若列表沒抓到)"""
         try:
             wid = course.get("work_log_id") or course.get("code", "")
             if not wid:
@@ -965,16 +1001,14 @@ class ISHAScraper:
             soup = BeautifulSoup(r.text, "html.parser")
             text = soup.get_text(separator="\n", strip=True)
 
-            # 學科上課地點
-            if (_isha_loc := re.search(r"學科上課地點[：:]\s*([^\n]+)", text)):
+            if (_isha_loc := re.search(r"學科上課地點[:：]\s*([^\n]+)", text)):
                 course["location"] = _isha_loc.group(1).strip()
-            elif (_isha_loc2 := re.search(r"上課地點[：:]\s*([^\n]+)", text)):
+            elif (_isha_loc2 := re.search(r"上課地點[:：]\s*([^\n]+)", text)):
                 course["location"] = _isha_loc2.group(1).strip()
 
-            # 時段 (例: 5/22下午班1330-1630)
-            if (_isha_tm := re.search(r"時段[：:]\s*([^\n]+)", text)):
+            if (_isha_tm := re.search(r"時段[:：]\s*([^\n]+)", text)):
                 raw = _isha_tm.group(1).strip()
-                _tm = re.search(r"(\d{1,2})(\d{2})\s*[-~~]\s*(\d{1,2})(\d{2})", raw)
+                _tm = re.search(r"(\d{1,2})(\d{2})\s*[-~]\s*(\d{1,2})(\d{2})", raw)
                 if _tm:
                     h1, m1, h2, m2 = (int(x) for x in _tm.groups())
                     course["class_time"] = (
@@ -984,19 +1018,16 @@ class ISHAScraper:
                 else:
                     course["class_time"] = raw
 
-            # 報名截止 (115年05月19日)
-            if (_isha_dl := re.search(r"報名截止日期[：:]\s*(\d{3})年(\d{1,2})月(\d{1,2})日", text)):
+            if (_isha_dl := re.search(r"報名截止日期[:：]\s*(\d{3})年(\d{1,2})月(\d{1,2})日", text)):
                 y, mo, d = _isha_dl.groups()
                 course["deadline"] = f"{int(y) + 1911:04d}-{int(mo):02d}-{int(d):02d}"
 
-            # 課程費用 (備註區常出現 ★課程費用600元)
             if not course.get("fee"):
                 if (_isha_fee := re.search(r"課程費用\s*([\d,]+)\s*元", text)):
                     course["fee"] = _isha_fee.group(1).replace(",", "")
 
-            # 若列表沒抓到 class_time,從備註抓 (有些用「上課時間」)
             if not course.get("class_time"):
-                if (_isha_ct := re.search(r"上課時間[：:]\s*([^\n]+)", text)):
+                if (_isha_ct := re.search(r"上課時間[:：]\s*([^\n]+)", text)):
                     course["class_time"] = _isha_ct.group(1).strip()
         except Exception as e:
             print(f"  [ISHA] detail {course.get('code', '?')} 失敗: {e}")
@@ -1005,10 +1036,9 @@ class ISHAScraper:
     # 列表抓取 (單一站別,POST + __VIEWSTATE 翻頁)
     # -----------------------------------------------------
     @classmethod
-    def _scrape_station(cls, session, station_full, station_short):
-        """抓單一站別的所有頁。POST 設定下拉,再 POST 各個 BT_N 翻頁。
-        station_full = ISHA 下拉選單裡的完整字串 (POST 用)
-        station_short = 簡稱 (給 branch 欄位顯示用)
+    def _scrape_station(cls, session, ddl_name, ddl_value, station_short):
+        """ddl_value = option 的 value 屬性 (POST 用)
+        station_short = 簡稱 (台北/新北/...)
         """
         courses = []
         try:
@@ -1016,29 +1046,25 @@ class ISHAScraper:
             r = session.get(cls.list_url, timeout=20)
             r.encoding = "utf-8"
             soup = BeautifulSoup(r.text, "html.parser")
-            ddl = cls._find_ddl_name(soup, "台北職訓中心")
-            if not ddl:
-                # 找不到站別下拉 → 全頁掃描再客戶端過濾
-                print(f"  [ISHA] 找不到站別下拉,改全頁掃描")
-                _all = cls._parse_list(soup, station_short)
-                return [c for c in _all if station_full in (c.get("branch") or "")]
 
-            # 2. POST 選站別
+            # 2. POST 選站別 (用 option 的 value,不是 text)
             vs = cls._vs(soup)
             form = {
-                "__EVENTTARGET": ddl,
+                "__EVENTTARGET": ddl_name,
                 "__EVENTARGUMENT": "",
                 "__VIEWSTATE": vs["__VIEWSTATE"],
                 "__VIEWSTATEGENERATOR": vs["__VIEWSTATEGENERATOR"],
                 "__EVENTVALIDATION": vs["__EVENTVALIDATION"],
-                ddl: station_full,
+                ddl_name: ddl_value,
             }
             r = session.post(cls.list_url, data=form, timeout=25)
             r.encoding = "utf-8"
             soup = BeautifulSoup(r.text, "html.parser")
-            courses.extend(cls._parse_list(soup, station_short))
+            page1_rows = cls._parse_list(soup)
+            courses.extend(page1_rows)
+            print(f"  [ISHA]   {station_short}: 第 1 頁 {len(page1_rows)} 筆")
 
-            # 3. 翻頁: 找所有 BT_N pagination targets
+            # 3. 翻頁
             page_targets = []
             for tag in soup.find_all(["a", "input"]):
                 onclick = (tag.get("href", "") + " " + (tag.get("onclick") or ""))
@@ -1048,7 +1074,6 @@ class ISHAScraper:
                     if tgt not in page_targets and not tgt.endswith("BT_1"):
                         page_targets.append(tgt)
 
-            # 逐頁翻 (每頁完成後要更新 __VIEWSTATE)
             for tgt in page_targets:
                 try:
                     vs = cls._vs(soup)
@@ -1058,58 +1083,116 @@ class ISHAScraper:
                         "__VIEWSTATE": vs["__VIEWSTATE"],
                         "__VIEWSTATEGENERATOR": vs["__VIEWSTATEGENERATOR"],
                         "__EVENTVALIDATION": vs["__EVENTVALIDATION"],
-                        ddl: station_full,
+                        ddl_name: ddl_value,
                     }
                     r = session.post(cls.list_url, data=form, timeout=25)
                     r.encoding = "utf-8"
                     soup = BeautifulSoup(r.text, "html.parser")
-                    courses.extend(cls._parse_list(soup, station_short))
+                    page_rows = cls._parse_list(soup)
+                    courses.extend(page_rows)
                 except Exception as e:
                     print(f"  [ISHA] {station_short} 翻頁 {tgt} 失敗: {e}")
         except Exception as e:
             print(f"  [ISHA] {station_short} 抓取失敗: {e}")
 
+        # 客戶端再 filter 一次 (萬一 ISHA 站別 filter 沒生效)
+        # 只保留 branch 包含 station_short 的 row
+        filtered = [c for c in courses if station_short in (c.get("branch") or "")]
         # 強制 branch 統一為簡稱
-        for c in courses:
+        for c in filtered:
             c["branch"] = station_short
-        return courses
+        return filtered
 
     # -----------------------------------------------------
     # 主流程
     # -----------------------------------------------------
     @classmethod
     def scrape(cls, fetch_details=True):
-        """ISHA 主流程:北區 5 站逐一 POST 抓,然後並行抓詳細頁"""
+        """ISHA 主流程:北區 5 站逐一 POST 抓 + 並行抓詳細頁"""
         from concurrent.futures import ThreadPoolExecutor
 
         cls._progress = {
             "stage": "list",
             "current": 0,
             "total": len(cls.target_stations),
-            "message": "ISHA 正在掃描站別...",
+            "message": "ISHA 正在分析站別下拉...",
         }
+
+        list_session = cls._make_session()
+
+        # 第一步:GET 初始頁,分析站別下拉
+        try:
+            r = list_session.get(cls.list_url, timeout=20)
+            r.encoding = "utf-8"
+            soup = BeautifulSoup(r.text, "html.parser")
+            ddl_name, pairs = cls._find_station_dropdown(soup)
+        except Exception as e:
+            print(f"  [ISHA] 初始 GET 失敗: {e}")
+            cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+            return []
+
+        if not ddl_name:
+            print(f"  [ISHA] ✗ 找不到站別下拉!fallback: 只抓第 1 頁全頁掃描")
+            try:
+                rows = cls._parse_list(soup)
+                filtered = []
+                for c in rows:
+                    b = c.get("branch") or ""
+                    for short_name in ("台北", "新北", "桃園", "中壢", "新竹"):
+                        if short_name in b:
+                            c["branch"] = short_name
+                            filtered.append(c)
+                            break
+                print(f"  [ISHA] fallback 結果: {len(filtered)} 筆")
+                cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+                return filtered
+            except Exception as e:
+                print(f"  [ISHA] fallback 也失敗: {e}")
+                cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+                return []
+
+        print(f"  [ISHA] ★ 站別下拉: {ddl_name}")
+        print(f"  [ISHA] ★ 站別共 {len(pairs)} 個選項;前 5 個範例:")
+        for text, value in pairs[:5]:
+            print(f"  [ISHA]     text={text!r:30s} value={value!r}")
+
+        # 第二步:解析 5 站對應的 value
+        resolved = []
+        for full_name, short_name in cls.target_stations.items():
+            value, matched_text = cls._match_station_value(pairs, full_name)
+            if value is None:
+                print(f"  [ISHA] ✗ {short_name}: 找不到對應 option (要的 {full_name!r})")
+                continue
+            print(f"  [ISHA] ✓ {short_name}: matched text={matched_text!r} → value={value!r}")
+            resolved.append((short_name, full_name, value))
+
+        if not resolved:
+            print(f"  [ISHA] 沒有任何站別可抓,結束")
+            cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+            return []
+
+        cls._progress["total"] = len(resolved)
+
+        # 第三步:逐站抓取
         all_courses = []
         seen_ids = set()
-
-        # 列表抓取: 5 站序列處理 (每站獨立 viewstate,避免互相干擾)
-        list_session = cls._make_session()
-        for i, (station_full, station_short) in enumerate(cls.target_stations.items()):
+        for i, (short_name, full_name, value) in enumerate(resolved):
             cls._progress["current"] = i + 1
-            cls._progress["message"] = f"ISHA 掃描 {station_short} ({i+1}/{len(cls.target_stations)})..."
-            print(f"  [ISHA] 抓 {station_short} ({station_full})...")
+            cls._progress["message"] = f"ISHA 掃描 {short_name} ({i+1}/{len(resolved)})..."
+            print(f"  [ISHA] 抓 {short_name} (value={value!r})...")
             try:
-                rows = cls._scrape_station(list_session, station_full, station_short)
+                rows = cls._scrape_station(list_session, ddl_name, value, short_name)
                 new_count = 0
                 for c in rows:
                     if c["id"] not in seen_ids:
                         seen_ids.add(c["id"])
                         all_courses.append(c)
                         new_count += 1
-                print(f"    → {new_count} 筆")
+                print(f"  [ISHA]   → {short_name} 加入 {new_count} 筆 (filter 後)")
             except Exception as e:
-                print(f"    ✗ {station_short}: {e}")
+                print(f"  [ISHA]   ✗ {short_name}: {e}")
 
-        # 詳細頁: 並行抓
+        # 第四步:詳細頁並行抓
         if fetch_details and all_courses:
             cls._progress = {
                 "stage": "details",
