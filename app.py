@@ -876,8 +876,8 @@ class ISHAScraper:
     # -----------------------------------------------------
     @classmethod
     def _parse_list(cls, soup):
-        """從列表頁的 HTML 解析所有課程列。branch 是從頁面文字「站別:XXX」解析出的原始值。
-        客戶端 filter 由呼叫者用 branch 比對「台北/新北/桃園/中壢/新竹」。
+        """從列表頁的 HTML 解析所有課程列。用 anchored regex 鎖定欄位 label,
+        避免被課程標題裡的數字誤捕。
         """
         results = []
         seen_wid = set()
@@ -891,63 +891,75 @@ class ISHAScraper:
                 continue
             seen_wid.add(wid)
 
-            block = a.get_text(separator="|", strip=True)
-            parts = [p.strip() for p in block.split("|") if p.strip()]
-            if not parts:
+            # 整段 link 文字 (正規化空白)
+            full = " ".join(a.get_text(" ", strip=True).split())
+            if not full:
                 continue
-            name = parts[0]
 
+            # 1. status: 找最早出現的狀態關鍵字,name = 它之前的所有字
+            name = full
             status = ""
-            class_type = ""
+            first_idx = len(full)
+            for _isha_st in ("確定開課", "招生中", "已截止", "已額滿", "完成報名"):
+                idx = full.find(_isha_st)
+                if 0 <= idx < first_idx:
+                    first_idx = idx
+                    status = _isha_st
+            if status:
+                name = full[:first_idx].strip()
+
+            # 2. class_type (日間班/夜間班/假日班)
+            ct_m = re.search(r"(日間班|夜間班|假日班)", full)
+            class_type = ct_m.group(1) if ct_m else ""
+
+            # 3. station (站別) - anchored
             station = ""
+            st_m = re.search(r"站別[::]?\s*([^\s]+(?:[^\s課初開]+)?)", full)
+            if st_m:
+                station = st_m.group(1).strip()
+
+            # 4. hours (課程時數) - anchored
             hours = ""
+            hr_m = re.search(r"課程時數[::]?\s*(\d+\.?\d*)", full)
+            if hr_m:
+                hours = hr_m.group(1)
+
+            # 5. category (初/在職) - anchored
             cat_raw = ""
+            cm = re.search(r"初/在職[::]?\s*(\S+?)(?=\s|開課|課程|$)", full)
+            if cm:
+                cat_raw = cm.group(1)
+
+            # 6. dates (開課日期) - anchored,民國轉西元
             start_date = ""
             end_date = ""
+            dr_m = re.search(r"開課日期[::]?\s*(\d{7})\s*[-~]\s*(\d{7})", full)
+            if dr_m:
+                start_date = cls._roc_to_west(dr_m.group(1))
+                end_date = cls._roc_to_west(dr_m.group(2))
+            else:
+                ds_m = re.search(r"開課日期[::]?\s*(\d{7})", full)
+                if ds_m:
+                    start_date = cls._roc_to_west(ds_m.group(1))
+
+            # 7. fee (課程費用) - anchored
             fee = ""
+            fe_m = re.search(r"課程費用[::]?\s*([\d,]+)\s*元", full)
+            if fe_m:
+                fee = fe_m.group(1).replace(",", "")
 
-            for p in parts:
-                if not status:
-                    for _isha_st in ("確定開課", "招生中", "已截止", "已額滿", "完成報名"):
-                        if _isha_st in p:
-                            status = _isha_st
-                            break
-                if not class_type and p in ("日間班", "夜間班", "假日班"):
-                    class_type = p
-                if "站別" in p and re.search(r"[:：]", p):
-                    station = re.split(r"[:：]", p, 1)[-1].strip()
-                if "課程時數" in p:
-                    hm = re.search(r"(\d+\.?\d*)", p)
-                    if hm:
-                        hours = hm.group(1)
-                if "初/在職" in p or "初訓" in p or "在職" in p:
-                    if ":" in p or "：" in p:
-                        cat_raw = re.split(r"[:：]", p, 1)[-1].strip()
-                    else:
-                        cat_raw = p
-                if "開課日期" in p or re.search(r"\d{7}\s*[-~]\s*\d{7}", p):
-                    dm = re.search(r"(\d{7})\s*[-~]\s*(\d{7})", p)
-                    if dm:
-                        start_date = cls._roc_to_west(dm.group(1))
-                        end_date = cls._roc_to_west(dm.group(2))
-                    else:
-                        dm2 = re.search(r"(\d{7})", p)
-                        if dm2:
-                            start_date = cls._roc_to_west(dm2.group(1))
-                if "課程費用" in p or re.search(r"[\d,]+\s*元", p):
-                    fm = re.search(r"([\d,]+)\s*元", p)
-                    if fm:
-                        fee = fm.group(1).replace(",", "")
-
+            # register_url
             if href.startswith("http"):
                 reg = href
             else:
                 reg = cls.base_url + ("" if href.startswith("/") else "/") + href
 
+            # 國籍 (從 title 偵測)
             nat = "外國籍" if any(k in name for k in
                 ("越南", "印尼", "菲律賓", "泰國", "外籍", "外國", "Vietnam", "Indonesia")
             ) else "本國籍"
 
+            # category 對應
             if "初訓" in cat_raw:
                 category = "初訓"
             elif "在職" in cat_raw:
@@ -955,6 +967,7 @@ class ISHAScraper:
             else:
                 category = cat_raw or "—"
 
+            # class_type 推測
             if not class_type:
                 if "夜" in name:
                     class_type = "夜間班"
@@ -968,7 +981,7 @@ class ISHAScraper:
                 "id": f"isha-{wid}",
                 "code": wid,
                 "name": name,
-                "branch": station,   # 原始站別文字 (例如「台北職訓中心」),呼叫者再簡化
+                "branch": station,   # 原始站別文字 (可能空,呼叫者會 force-label)
                 "category": category,
                 "nationality": nat,
                 "start_date": start_date,
@@ -1001,34 +1014,41 @@ class ISHAScraper:
             soup = BeautifulSoup(r.text, "html.parser")
             text = soup.get_text(separator="\n", strip=True)
 
-            if (_isha_loc := re.search(r"學科上課地點[:：]\s*([^\n]+)", text)):
+            # 1. 上課地點
+            if (_isha_loc := re.search(r"學科上課地點[::]\s*([^\n]+)", text)):
                 course["location"] = _isha_loc.group(1).strip()
-            elif (_isha_loc2 := re.search(r"上課地點[:：]\s*([^\n]+)", text)):
+            elif (_isha_loc2 := re.search(r"上課地點[::]\s*([^\n]+)", text)):
                 course["location"] = _isha_loc2.group(1).strip()
 
-            if (_isha_tm := re.search(r"時段[:：]\s*([^\n]+)", text)):
-                raw = _isha_tm.group(1).strip()
-                _tm = re.search(r"(\d{1,2})(\d{2})\s*[-~]\s*(\d{1,2})(\d{2})", raw)
+            # 2. 時段 → class_time (只有真的是 HH:MM-HH:MM 或 HHMM-HHMM 才設,
+            #     避免裝到日期字串)
+            for _isha_label in ("時段", "上課時間"):
+                if course.get("class_time"):
+                    break
+                _isha_sec = re.search(rf"{_isha_label}[::]\s*([^\n]+)", text)
+                if not _isha_sec:
+                    continue
+                raw = _isha_sec.group(1).strip()
+                # 同時支援 1330-1630 跟 13:30-16:30 跟 13:30~16:30
+                _tm = re.search(r"(\d{1,2})[::]?(\d{2})\s*[-~]\s*(\d{1,2})[::]?(\d{2})", raw)
                 if _tm:
                     h1, m1, h2, m2 = (int(x) for x in _tm.groups())
-                    course["class_time"] = (
-                        f"{'上午' if h1 < 12 else '下午'} {h1}:{m1:02d} - "
-                        f"{'上午' if h2 < 12 else '下午'} {h2}:{m2:02d}"
-                    )
-                else:
-                    course["class_time"] = raw
+                    if 0 <= h1 <= 23 and 0 <= h2 <= 23 and 0 <= m1 <= 59 and 0 <= m2 <= 59:
+                        course["class_time"] = (
+                            f"{'上午' if h1 < 12 else '下午'} {h1}:{m1:02d} - "
+                            f"{'上午' if h2 < 12 else '下午'} {h2}:{m2:02d}"
+                        )
+                # 注意:沒 else,沒抓到時間就讓 class_time 保持空字串 (信件 template 會處理)
 
-            if (_isha_dl := re.search(r"報名截止日期[:：]\s*(\d{3})年(\d{1,2})月(\d{1,2})日", text)):
+            # 3. 報名截止
+            if (_isha_dl := re.search(r"報名截止日期[::]\s*(\d{3})年(\d{1,2})月(\d{1,2})日", text)):
                 y, mo, d = _isha_dl.groups()
                 course["deadline"] = f"{int(y) + 1911:04d}-{int(mo):02d}-{int(d):02d}"
 
+            # 4. 課程費用 (備註中可能含優惠價,若列表沒抓到才補)
             if not course.get("fee"):
                 if (_isha_fee := re.search(r"課程費用\s*([\d,]+)\s*元", text)):
                     course["fee"] = _isha_fee.group(1).replace(",", "")
-
-            if not course.get("class_time"):
-                if (_isha_ct := re.search(r"上課時間[:：]\s*([^\n]+)", text)):
-                    course["class_time"] = _isha_ct.group(1).strip()
         except Exception as e:
             print(f"  [ISHA] detail {course.get('code', '?')} 失敗: {e}")
 
@@ -1095,13 +1115,12 @@ class ISHAScraper:
         except Exception as e:
             print(f"  [ISHA] {station_short} 抓取失敗: {e}")
 
-        # 客戶端再 filter 一次 (萬一 ISHA 站別 filter 沒生效)
-        # 只保留 branch 包含 station_short 的 row
-        filtered = [c for c in courses if station_short in (c.get("branch") or "")]
-        # 強制 branch 統一為簡稱
-        for c in filtered:
+        # 信任 POST filter:強制標記 branch 為簡稱
+        # (移除 v2 的客戶端 filter,因為 ISHA 列表頁套用站別 filter 後,
+        #  會把「站別:XXX」標籤從每筆中省略,導致 branch 解析失敗 → 全部被 filter 掉)
+        for c in courses:
             c["branch"] = station_short
-        return filtered
+        return courses
 
     # -----------------------------------------------------
     # 主流程
@@ -1214,6 +1233,7 @@ class ISHAScraper:
         cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
         print(f"  [ISHA] 完成,共 {len(all_courses)} 堂課(北區 5 站)")
         return all_courses
+
 
 SCRAPERS = {
     "ticsha": TichaScraper,
