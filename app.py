@@ -1776,6 +1776,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             <div class="desc">桃園 · 台北承德 / 職安·消防·營建 三類</div>
           </div>
         </label>
+      <label class="inst-card checked" id="instIsha" onclick="toggleInst('isha')">
+        <input type="checkbox" id="instCheckIsha" checked>
+        <div>
+          <div class="label">中華民國工業安全衛生協會 (ISHA)</div>
+          <div class="desc">北區 5 個職訓中心:台北·新北·桃園·中壢·新竹</div>
+        </div>
+      </label>
       <button class="btn-primary" onclick="startUpdate()">🔄 立即更新</button>
     </div>
     <div class="info-line" id="lastUpdate">尚未抓取</div>
