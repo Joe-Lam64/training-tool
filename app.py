@@ -2074,6 +2074,7 @@ async function startUpdate() {
     const scraperCodes = [];
     if (document.getElementById('instTicsha').classList.contains('checked')) scraperCodes.push('ticsha');
     if (document.getElementById('instCpc').classList.contains('checked')) scraperCodes.push('cpc');
+    if (document.getElementById('instIsha').classList.contains('checked')) scraperCodes.push('isha');
     if (scraperCodes.length === 0) {
       toast('請至少勾選一個協會', 'error');
       clearInterval(progressTimer);
