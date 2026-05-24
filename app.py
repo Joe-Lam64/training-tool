@@ -1136,6 +1136,7 @@ class ISHAScraper:
 SCRAPERS = {
     "ticsha": TichaScraper,
     "cpc": CPCScraper,
+    "isha": ISHAScraper,
 }
 
 def load_data():
