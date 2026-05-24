@@ -1215,7 +1215,6 @@ class ISHAScraper:
         print(f"  [ISHA] 完成,共 {len(all_courses)} 堂課(北區 5 站)")
         return all_courses
 
-
 SCRAPERS = {
     "ticsha": TichaScraper,
     "cpc": CPCScraper,
