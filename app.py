@@ -1008,10 +1008,15 @@ class ISHAScraper:
                 preview = text[:800].replace("\n", " ⏎ ")
                 print(f"  [ISHA DEBUG#{idx}] text[:800]={preview!r}")
 
-            # === 站別 (3 種 fallback) ===
+            # === 站別 (v8: 嚴格優先「開課站別」,Pattern C 防呆) ===
             raw_station = ""
-            if (m := re.search(r"站別\s*[::]\s*([^\n]+)", text)):
+            # Pattern A (嚴格): 優先「開課站別:」
+            if (m := re.search(r"開課站別\s*[::]\s*([^\n]+)", text)):
                 raw_station = m.group(1).strip()
+            # Pattern A2 (寬鬆): 一般「站別:」
+            elif (m := re.search(r"站別\s*[::]\s*([^\n]+)", text)):
+                raw_station = m.group(1).strip()
+            # Pattern B: 「站別」標籤後 3 行內找站別值
             if not raw_station:
                 lines = text.split("\n")
                 for i, line in enumerate(lines):
@@ -1023,7 +1028,8 @@ class ISHAScraper:
                                 break
                         if raw_station:
                             break
-            if not raw_station:
+            # Pattern C (v8: 防呆 — 只有當文本完全沒「站別」字眼才fallback,避免誤抓)
+            if not raw_station and "站別" not in text:
                 for kw in ("台北職訓中心", "新北職業訓練中心", "桃園職業訓練中心",
                            "新竹區職業訓練中心", "台中職業訓練中心", "彰化區職業訓練中心",
                            "雲林職訓中心", "高雄服務處", "台南職訓中心", "台中職訓"):
@@ -1067,11 +1073,29 @@ class ISHAScraper:
                 if (_isha_fee := re.search(r"課程費用\s*[::]?\s*([\d,]+)\s*元?", text)):
                     course["fee"] = _isha_fee.group(1).replace(",", "")
 
-            # === 上課地點 ===
-            if (_isha_loc := re.search(r"學科上課地點\s*[::]\s*([^\n]+)", text)):
-                course["location"] = _isha_loc.group(1).strip()
-            elif (_isha_loc2 := re.search(r"上課地點\s*[::]\s*([^\n]+)", text)):
-                course["location"] = _isha_loc2.group(1).strip()
+            # === 上課地址 (v8: 修 typo 地點→地址 + 同時抓學科 & 術科) ===
+            _loc_xueke = ""   # 學科
+            _loc_shuke = ""   # 術科
+            if (m := re.search(r"學科上課地址\s*[::]\s*([^\n]+)", text)):
+                _loc_xueke = m.group(1).strip()
+            if (m := re.search(r"術科上課地址\s*[::]\s*([^\n]+)", text)):
+                _loc_shuke = m.group(1).strip()
+            # 萬一網站改字眼,備用 fallback (地點)
+            if not _loc_xueke and (m := re.search(r"學科上課地點\s*[::]\s*([^\n]+)", text)):
+                _loc_xueke = m.group(1).strip()
+            if not _loc_shuke and (m := re.search(r"術科上課地點\s*[::]\s*([^\n]+)", text)):
+                _loc_shuke = m.group(1).strip()
+            # 通用 fallback
+            if not _loc_xueke and not _loc_shuke:
+                if (m := re.search(r"上課地[址點]\s*[::]\s*([^\n]+)", text)):
+                    _loc_xueke = m.group(1).strip()
+            # 合併
+            if _loc_xueke and _loc_shuke and _loc_xueke != _loc_shuke:
+                course["location"] = f"學科: {_loc_xueke} | 術科: {_loc_shuke}"
+            elif _loc_xueke:
+                course["location"] = _loc_xueke
+            elif _loc_shuke:
+                course["location"] = _loc_shuke
 
             # === 時段 → class_time ===
             for _isha_label in ("時段", "上課時間"):
@@ -1215,7 +1239,7 @@ class ISHAScraper:
                 cls._fetch_detail(session, c)
                 return c
 
-            with ThreadPoolExecutor(max_workers=12) as pool:
+            with ThreadPoolExecutor(max_workers=24) as pool:
                 for idx, _ in enumerate(pool.map(_isha_do, all_rows)):
                     cls._progress["current"] = idx + 1
                     cls._progress["message"] = f"ISHA 抓詳細 {idx+1}/{len(all_rows)}..."
@@ -1260,7 +1284,17 @@ def update_courses(codes):
         if code in SCRAPERS:
             scraper = SCRAPERS[code]
             print(f"\n=== 更新 {scraper.name} ===")
-            all_courses.extend([{**c, "_scraper_code": code} for c in scraper.scrape()])
+            try:
+                new_rows = [{**c, "_scraper_code": code} for c in scraper.scrape()]
+                all_courses.extend(new_rows)
+                # 增量儲存:每個協會跑完就先存一份,萬一後面爆掉至少保住前面
+                data = {"courses": all_courses, "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                save_data(data)
+                print(f"=== {scraper.name} 完成,已存檔(本次 {len(new_rows)} 筆 / 累計 {len(all_courses)} 筆) ===")
+            except Exception as e:
+                print(f"=== {scraper.name} 失敗: {e} ===")
+                import traceback
+                traceback.print_exc()
     data = {"courses": all_courses, "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
     save_data(data)
     return data
