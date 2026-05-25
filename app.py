@@ -769,7 +769,7 @@ class ISHAScraper:
     detail_url_tpl = "https://isha.org.tw/Msite/tech/serch_inner.aspx?WorkLogID={}"
 
     # 北區 5 站對應到的簡稱
-    # 注意:「中壢」必須在「桃園」之前,因為「桃園職業訓練中心(中壢教室)」兩個關鍵字都會匹配
+    # 注意:「中壢」必須在「桃園」之前(因為「桃園職業訓練中心(中壢教室)」兩個關鍵字都會匹配)
     NORTH_STATIONS = (
         ("中壢", "中壢"),
         ("台北", "台北"),
@@ -819,17 +819,49 @@ class ISHAScraper:
         return f"{int(y) + 1911:04d}-{mo}-{d}"
 
     @classmethod
-    def _normalize_branch(cls, raw_branch):
-        """把 ISHA 完整站別名轉成 2 字簡稱;不在北區則回 None"""
-        if not raw_branch:
-            return None
-        for short, alias in cls.NORTH_STATIONS:
-            if alias in raw_branch:
-                return short
-        return None
+    def _find_next_page_target(cls, soup, current_page):
+        """找下一頁的 __doPostBack target。多種策略防止失敗。
+        回傳 (target_str, page_num) 或 (None, None)
+        """
+        # 策略 1: 找 BT_<current+1>
+        for tag in soup.find_all(["a", "input"]):
+            onclick = (tag.get("href", "") + " " + (tag.get("onclick") or ""))
+            pm = re.search(rf"__doPostBack\('([^']*\$BT_{current_page + 1})'", onclick)
+            if pm:
+                return pm.group(1), current_page + 1
+
+        # 策略 2: 找比 current_page 大的最小 BT_N
+        next_n = None
+        next_t = None
+        for tag in soup.find_all(["a", "input"]):
+            onclick = (tag.get("href", "") + " " + (tag.get("onclick") or ""))
+            pm = re.search(r"__doPostBack\('([^']*\$BT_(\d+))'", onclick)
+            if pm:
+                n = int(pm.group(2))
+                if n > current_page:
+                    if next_n is None or n < next_n:
+                        next_n = n
+                        next_t = pm.group(1)
+        if next_t:
+            return next_t, next_n
+
+        # 策略 3: 找「下一頁 / > / Next」按鈕
+        for tag in soup.find_all(["a", "input"]):
+            text = (tag.get_text(strip=True) or "") + " " + \
+                   str(tag.get("value", "")) + " " + str(tag.get("title", ""))
+            if any(kw in text for kw in (">", "下一頁", "下頁", "Next", "next", "→")):
+                onclick = (tag.get("href", "") + " " + (tag.get("onclick") or ""))
+                pm = re.search(r"__doPostBack\('([^']+)'", onclick)
+                if pm:
+                    # 過濾掉自己 (避免無限迴圈) — 排除 BT_<current> 跟 BT_1
+                    target = pm.group(1)
+                    if f"BT_{current_page}" in target or target.endswith("BT_1"):
+                        continue
+                    return target, current_page + 1
+        return None, None
 
     # -----------------------------------------------------
-    # 列表頁解析 (anchor 鎖定每個 label,branch 保留原始文字)
+    # 列表頁解析 (不抓 branch,留給詳細頁負責)
     # -----------------------------------------------------
     @classmethod
     def _parse_list(cls, soup):
@@ -865,12 +897,6 @@ class ISHAScraper:
             ct_m = re.search(r"(日間班|夜間班|假日班)", full)
             class_type = ct_m.group(1) if ct_m else ""
 
-            # 站別 (anchored,允許括號跟英文)
-            station = ""
-            st_m = re.search(r"站別[::]?\s*((?:台北|新北|桃園|中壢|新竹|台中|彰化|雲林|高雄|台南)[^\s課初開]*)", full)
-            if st_m:
-                station = st_m.group(1).strip()
-
             # 課程時數
             hours = ""
             hr_m = re.search(r"課程時數[::]?\s*(\d+\.?\d*)", full)
@@ -901,13 +927,11 @@ class ISHAScraper:
             if fe_m:
                 fee = fe_m.group(1).replace(",", "")
 
-            # 報名連結
             if href.startswith("http"):
                 reg = href
             else:
                 reg = cls.base_url + ("" if href.startswith("/") else "/") + href
 
-            # 國籍
             nat = "外國籍" if any(k in name for k in
                 ("越南", "印尼", "菲律賓", "泰國", "外籍", "外國", "Vietnam", "Indonesia")
             ) else "本國籍"
@@ -932,7 +956,7 @@ class ISHAScraper:
                 "id": f"isha-{wid}",
                 "code": wid,
                 "name": name,
-                "branch": station,  # 真實站別 (台北職訓中心 / 雲林職訓中心 等)
+                "branch": "",  # 詳細頁負責填
                 "category": category,
                 "nationality": nat,
                 "start_date": start_date,
@@ -951,7 +975,7 @@ class ISHAScraper:
         return results
 
     # -----------------------------------------------------
-    # 詳細頁解析
+    # 詳細頁解析 (這次負責抓站別)
     # -----------------------------------------------------
     @classmethod
     def _fetch_detail(cls, session, course):
@@ -965,11 +989,23 @@ class ISHAScraper:
             soup = BeautifulSoup(r.text, "html.parser")
             text = soup.get_text(separator="\n", strip=True)
 
+            # === 站別 (最關鍵 — 詳細頁一定有) ===
+            if (_isha_st := re.search(r"站別\s*[::]\s*([^\n]+)", text)):
+                raw_station = _isha_st.group(1).strip()
+                course["_raw_station"] = raw_station  # 留著除錯用
+                # 正規化到簡稱
+                for short, alias in cls.NORTH_STATIONS:
+                    if alias in raw_station:
+                        course["branch"] = short
+                        break
+
+            # 上課地點
             if (_isha_loc := re.search(r"學科上課地點[::]\s*([^\n]+)", text)):
                 course["location"] = _isha_loc.group(1).strip()
             elif (_isha_loc2 := re.search(r"上課地點[::]\s*([^\n]+)", text)):
                 course["location"] = _isha_loc2.group(1).strip()
 
+            # 時段 → class_time
             for _isha_label in ("時段", "上課時間"):
                 if course.get("class_time"):
                     break
@@ -986,10 +1022,12 @@ class ISHAScraper:
                             f"{'上午' if h2 < 12 else '下午'} {h2}:{m2:02d}"
                         )
 
+            # 報名截止
             if (_isha_dl := re.search(r"報名截止日期[::]\s*(\d{3})年(\d{1,2})月(\d{1,2})日", text)):
                 y, mo, d = _isha_dl.groups()
                 course["deadline"] = f"{int(y) + 1911:04d}-{int(mo):02d}-{int(d):02d}"
 
+            # 課程費用 (備註區)
             if not course.get("fee"):
                 if (_isha_fee := re.search(r"課程費用\s*([\d,]+)\s*元", text)):
                     course["fee"] = _isha_fee.group(1).replace(",", "")
@@ -997,13 +1035,11 @@ class ISHAScraper:
             print(f"  [ISHA] detail {course.get('code', '?')} 失敗: {e}")
 
     # -----------------------------------------------------
-    # 主流程:enumerate 全部列表頁 + 客戶端北區過濾
+    # 主流程
     # -----------------------------------------------------
     @classmethod
     def scrape(cls, fetch_details=True):
-        """v4: 不再依賴 ASP.NET 的站別 filter (它根本沒生效)。
-        改成抓所有頁,用每筆解析出的真實 station 客戶端過濾北區。
-        """
+        """v5: enumerate 全部頁 + 詳細頁負責抓站別 + 北區過濾"""
         from concurrent.futures import ThreadPoolExecutor
 
         cls._progress = {"stage": "list", "current": 0, "total": 0, "message": "ISHA 載入..."}
@@ -1019,7 +1055,7 @@ class ISHAScraper:
             cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
             return []
 
-        # 偵測最大頁數 (從翻頁元素)
+        # 偵測初始可見的最大頁數
         max_page_seen = 1
         for tag in soup.find_all(["a", "input"]):
             onclick = (tag.get("href", "") + " " + (tag.get("onclick") or ""))
@@ -1029,7 +1065,7 @@ class ISHAScraper:
                 if n > max_page_seen:
                     max_page_seen = n
         print(f"  [ISHA] 初始頁能看到的最大頁碼: {max_page_seen}")
-        cls._progress["total"] = max(max_page_seen, 30)  # 估計值
+        cls._progress["total"] = max(max_page_seen, 60)
 
         all_rows = []
         seen_ids = set()
@@ -1045,31 +1081,27 @@ class ISHAScraper:
             print(f"  [ISHA] 第 {page_num} 頁: 解析 {len(page_rows)} 筆 (新加 {new})")
             return new
 
-        # 第 1 頁
         _absorb(1, soup)
 
-        # 從第 2 頁開始,逐頁前進
-        # 每次找「比當前頁大的 BT_N 中最小那個」,確保不跳過頁
-        # 但允許跳號 (ASP.NET 分頁有時只顯示前 10 頁 + 最後一頁)
-        # 上限 100 頁,避免無限迴圈
         current_page = 1
         max_iterations = 100
         consecutive_empty = 0
 
         while current_page < max_iterations:
-            next_page = None
-            next_target = None
-            for tag in soup.find_all(["a", "input"]):
-                onclick = (tag.get("href", "") + " " + (tag.get("onclick") or ""))
-                pm = re.search(r"__doPostBack\('([^']*\$BT_(\d+))'", onclick)
-                if pm:
-                    n = int(pm.group(2))
-                    if n > current_page:
-                        if next_page is None or n < next_page:
-                            next_page = n
-                            next_target = pm.group(1)
+            next_target, next_page = cls._find_next_page_target(soup, current_page)
             if not next_target:
-                print(f"  [ISHA] 第 {current_page} 頁找不到下一頁,結束分頁")
+                # 找不到下一頁 — 印出所有 postback target 供除錯
+                all_targets = []
+                for tag in soup.find_all(["a", "input"]):
+                    onclick = (tag.get("href", "") + " " + (tag.get("onclick") or ""))
+                    pm = re.search(r"__doPostBack\('([^']+)'", onclick)
+                    if pm:
+                        t = pm.group(1)
+                        txt = (tag.get_text(strip=True) or tag.get("value", "") or "")[:15]
+                        all_targets.append(f"{t} (text={txt!r})")
+                print(f"  [ISHA] 第 {current_page} 頁找不到下一頁。所有 postback targets:")
+                for tt in all_targets[:25]:
+                    print(f"    {tt}")
                 break
 
             try:
@@ -1086,9 +1118,8 @@ class ISHAScraper:
                 soup = BeautifulSoup(r.text, "html.parser")
                 current_page = next_page
                 cls._progress["current"] = current_page
-                cls._progress["message"] = f"ISHA 列表 {current_page} 頁..."
+                cls._progress["message"] = f"ISHA 列表 {current_page}/{cls._progress['total']}..."
                 new = _absorb(current_page, soup)
-                # 連續 3 頁都沒新資料 → 停 (POST 可能 stuck 在同一頁)
                 if new == 0:
                     consecutive_empty += 1
                     if consecutive_empty >= 3:
@@ -1100,23 +1131,13 @@ class ISHAScraper:
                 print(f"  [ISHA] 第 {current_page + 1} 頁失敗: {e}")
                 break
 
-        print(f"  [ISHA] 列表抓完,共 {len(all_rows)} 筆 (含全台所有站別)")
+        print(f"  [ISHA] 列表抓完,共 {len(all_rows)} 筆 (含全台所有站別,branch 待詳細頁填)")
 
-        # 2. 北區過濾
-        filtered = []
-        for c in all_rows:
-            short = cls._normalize_branch(c.get("branch") or "")
-            if short:
-                c["branch"] = short
-                filtered.append(c)
-
-        print(f"  [ISHA] 北區過濾後: {len(filtered)} 筆 (台北/新北/桃園/中壢/新竹)")
-
-        # 3. 詳細頁並行抓
-        if fetch_details and filtered:
+        # 2. 詳細頁並行抓 (順便取得真實站別)
+        if fetch_details and all_rows:
             cls._progress = {
-                "stage": "details", "current": 0, "total": len(filtered),
-                "message": f"ISHA 抓詳細 0/{len(filtered)}...",
+                "stage": "details", "current": 0, "total": len(all_rows),
+                "message": f"ISHA 抓詳細(取得站別) 0/{len(all_rows)}...",
             }
             detail_session = cls._make_session()
 
@@ -1125,9 +1146,25 @@ class ISHAScraper:
                 return c
 
             with ThreadPoolExecutor(max_workers=12) as pool:
-                for idx, _ in enumerate(pool.map(_isha_do, filtered)):
+                for idx, _ in enumerate(pool.map(_isha_do, all_rows)):
                     cls._progress["current"] = idx + 1
-                    cls._progress["message"] = f"ISHA 抓詳細 {idx+1}/{len(filtered)}..."
+                    cls._progress["message"] = f"ISHA 抓詳細 {idx+1}/{len(all_rows)}..."
+
+        # 3. 北區過濾 (用詳細頁填回的 branch)
+        filtered = [c for c in all_rows if c.get("branch") in ("台北", "新北", "桃園", "中壢", "新竹")]
+        non_north_count = len(all_rows) - len(filtered)
+        empty_count = sum(1 for c in all_rows if not c.get("branch"))
+
+        # 印 5 個範例供除錯
+        print(f"  [ISHA] 站別範例 (前 5 筆原始):")
+        for c in all_rows[:5]:
+            print(f"    code={c['code']} raw_station={c.get('_raw_station', '(無)')!r} → branch={c.get('branch', '')!r}")
+
+        print(f"  [ISHA] 詳細頁抓完,北區 {len(filtered)} 筆 / 非北區 {non_north_count} 筆 / 空 {empty_count} 筆")
+
+        # 清掉除錯用欄位
+        for c in filtered:
+            c.pop("_raw_station", None)
 
         cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
         print(f"  [ISHA] 完成,共 {len(filtered)} 堂課(北區 5 站)")
