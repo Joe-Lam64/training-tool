@@ -900,28 +900,28 @@ class ISHAScraper:
             class_type = ct_m.group(1) if ct_m else ""
 
             hours = ""
-            hr_m = re.search(r"課程時數[::]?\s*(\d+\.?\d*)", full)
+            hr_m = re.search(r"課程時數[:：]?\s*(\d+\.?\d*)", full)
             if hr_m:
                 hours = hr_m.group(1)
 
             cat_raw = ""
-            cm = re.search(r"初/在職[::]?\s*(\S+?)(?=\s|開課|課程|$)", full)
+            cm = re.search(r"初/在職[:：]?\s*(\S+?)(?=\s|開課|課程|$)", full)
             if cm:
                 cat_raw = cm.group(1)
 
             start_date = ""
             end_date = ""
-            dr_m = re.search(r"開課日期[::]?\s*(\d{7})\s*[-~]\s*(\d{7})", full)
+            dr_m = re.search(r"開課日期[:：]?\s*(\d{7})\s*[-~]\s*(\d{7})", full)
             if dr_m:
                 start_date = cls._roc_to_west(dr_m.group(1))
                 end_date = cls._roc_to_west(dr_m.group(2))
             else:
-                ds_m = re.search(r"開課日期[::]?\s*(\d{7})", full)
+                ds_m = re.search(r"開課日期[:：]?\s*(\d{7})", full)
                 if ds_m:
                     start_date = cls._roc_to_west(ds_m.group(1))
 
             fee = ""
-            fe_m = re.search(r"課程費用[::]?\s*([\d,]+)\s*元", full)
+            fe_m = re.search(r"課程費用[:：]?\s*([\d,]+)\s*元", full)
             if fe_m:
                 fee = fe_m.group(1).replace(",", "")
 
@@ -1011,10 +1011,10 @@ class ISHAScraper:
             # === 站別 (v8: 嚴格優先「開課站別」,Pattern C 防呆) ===
             raw_station = ""
             # Pattern A (嚴格): 優先「開課站別:」
-            if (m := re.search(r"開課站別\s*[::]\s*([^\n]+)", text)):
+            if (m := re.search(r"開課站別\s*[:：]\s*([^\n]+)", text)):
                 raw_station = m.group(1).strip()
             # Pattern A2 (寬鬆): 一般「站別:」
-            elif (m := re.search(r"站別\s*[::]\s*([^\n]+)", text)):
+            elif (m := re.search(r"站別\s*[:：]\s*([^\n]+)", text)):
                 raw_station = m.group(1).strip()
             # Pattern B: 「站別」標籤後 3 行內找站別值
             if not raw_station:
@@ -1056,12 +1056,12 @@ class ISHAScraper:
 
             # === 課程時數 (v7 新增 — 從詳細頁補) ===
             if not course.get("hours"):
-                if (h := re.search(r"課程時數\s*[::]?\s*(\d+\.?\d*)", text)):
+                if (h := re.search(r"課程時數\s*[:：]?\s*(\d+\.?\d*)", text)):
                     course["hours"] = h.group(1)
 
             # === 初/在職 → category (v7 新增 — 從詳細頁補) ===
             if not course.get("category"):
-                if (c := re.search(r"初/在職\s*[::]?\s*(\S+)", text)):
+                if (c := re.search(r"初/在職\s*[:：]?\s*(\S+)", text)):
                     cat = c.group(1)
                     if "初訓" in cat:
                         course["category"] = "初訓"
@@ -1070,24 +1070,24 @@ class ISHAScraper:
 
             # === 課程費用 ===
             if not course.get("fee"):
-                if (_isha_fee := re.search(r"課程費用\s*[::]?\s*([\d,]+)\s*元?", text)):
+                if (_isha_fee := re.search(r"課程費用\s*[:：]?\s*([\d,]+)\s*元?", text)):
                     course["fee"] = _isha_fee.group(1).replace(",", "")
 
             # === 上課地址 (v8: 修 typo 地點→地址 + 同時抓學科 & 術科) ===
             _loc_xueke = ""   # 學科
             _loc_shuke = ""   # 術科
-            if (m := re.search(r"學科上課地址\s*[::]\s*([^\n]+)", text)):
+            if (m := re.search(r"學科上課地址\s*[:：]\s*([^\n]+)", text)):
                 _loc_xueke = m.group(1).strip()
-            if (m := re.search(r"術科上課地址\s*[::]\s*([^\n]+)", text)):
+            if (m := re.search(r"術科上課地址\s*[:：]\s*([^\n]+)", text)):
                 _loc_shuke = m.group(1).strip()
             # 萬一網站改字眼,備用 fallback (地點)
-            if not _loc_xueke and (m := re.search(r"學科上課地點\s*[::]\s*([^\n]+)", text)):
+            if not _loc_xueke and (m := re.search(r"學科上課地點\s*[:：]\s*([^\n]+)", text)):
                 _loc_xueke = m.group(1).strip()
-            if not _loc_shuke and (m := re.search(r"術科上課地點\s*[::]\s*([^\n]+)", text)):
+            if not _loc_shuke and (m := re.search(r"術科上課地點\s*[:：]\s*([^\n]+)", text)):
                 _loc_shuke = m.group(1).strip()
             # 通用 fallback
             if not _loc_xueke and not _loc_shuke:
-                if (m := re.search(r"上課地[址點]\s*[::]\s*([^\n]+)", text)):
+                if (m := re.search(r"上課地[址點]\s*[:：]\s*([^\n]+)", text)):
                     _loc_xueke = m.group(1).strip()
             # 合併
             if _loc_xueke and _loc_shuke and _loc_xueke != _loc_shuke:
@@ -1101,11 +1101,11 @@ class ISHAScraper:
             for _isha_label in ("時段", "上課時間"):
                 if course.get("class_time"):
                     break
-                _isha_sec = re.search(rf"{_isha_label}\s*[::]\s*([^\n]+)", text)
+                _isha_sec = re.search(rf"{_isha_label}\s*[:：]\s*([^\n]+)", text)
                 if not _isha_sec:
                     continue
                 raw = _isha_sec.group(1).strip()
-                _tm = re.search(r"(\d{1,2})[::]?(\d{2})\s*[-~]\s*(\d{1,2})[::]?(\d{2})", raw)
+                _tm = re.search(r"(\d{1,2})[:：]?(\d{2})\s*[-~]\s*(\d{1,2})[:：]?(\d{2})", raw)
                 if _tm:
                     h1, m1, h2, m2 = (int(x) for x in _tm.groups())
                     if 0 <= h1 <= 23 and 0 <= h2 <= 23 and 0 <= m1 <= 59 and 0 <= m2 <= 59:
@@ -1115,7 +1115,7 @@ class ISHAScraper:
                         )
 
             # === 報名截止 ===
-            if (_isha_dl := re.search(r"報名截止日期\s*[::]?\s*(\d{3})年(\d{1,2})月(\d{1,2})日", text)):
+            if (_isha_dl := re.search(r"報名截止日期\s*[:：]?\s*(\d{3})年(\d{1,2})月(\d{1,2})日", text)):
                 y, mo, d = _isha_dl.groups()
                 course["deadline"] = f"{int(y) + 1911:04d}-{int(mo):02d}-{int(d):02d}"
 
