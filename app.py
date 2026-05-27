@@ -1295,7 +1295,7 @@ def save_data(data):
 
 
 # === Commit 18a: cache 與 cutoff 設定 ===
-CUTOFF_DAYS_PAST = 7      # 已開課 7 天內仍保留(報名截止可能還沒過)
+CUTOFF_DAYS_PAST = 0      # 已開課的就過濾掉(同仁不能選過去的日期)
 CUTOFF_DAYS_FUTURE = 180  # 只看未來半年內的課
 
 
