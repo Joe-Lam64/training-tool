@@ -1745,7 +1745,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   /* === Table === */
   .filter-bar {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
     gap: 10px; margin-bottom: 14px;
   }
   .stat { font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; }
@@ -1956,6 +1956,12 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <h2>② 篩選並挑選課程</h2>
     <div class="filter-bar">
       <input type="text" id="searchKw" placeholder="🔍 搜尋課程名稱 (例: 粉塵, 堆高機)" oninput="renderTable()">
+      <select id="filterInstitute" onchange="renderTable()">
+        <option value="">全部主辦單位</option>
+        <option value="台灣省工商安全衛生協會">台灣省工商安全衛生協會</option>
+        <option value="中國生產力中心">中國生產力中心 (CPC)</option>
+        <option value="中華民國工業安全衛生協會">中華民國工業安全衛生協會 (ISHA)</option>
+      </select>
       <select id="filterBranch" onchange="renderTable()" style="display:none;"><option value="">全部分會</option></select>
       <div id="branchMultiBox" style="position:relative;">
         <button type="button" onclick="toggleBranchDropdown()" id="branchToggleBtn"
@@ -2035,15 +2041,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-      <button class="btn-primary" onclick="generateExternal()">📧 複製給同仁 (簡潔版)</button>
-      <button class="btn-secondary" onclick="previewExternal()">👁️ 預覽同仁版</button>
-      <div style="flex:1;"></div>
-      <button class="btn-primary" onclick="generateInternal()" style="background:linear-gradient(135deg,#C44569,#E07A8F);">📋 複製後台版 (含報名連結)</button>
-      <button class="btn-secondary" onclick="previewInternal()">👁️ 預覽後台版</button>
+      <button class="btn-primary" onclick="generateExternal()">📧 複製信件 (Outlook 可直接貼)</button>
+      <button class="btn-secondary" onclick="previewExternal()">👁️ 預覽信件</button>
     </div>
     <div class="info-line">
-      <b>同仁版</b>: 課程介紹 + 日期、上課時間、地點、費用 (不含班別/時數/狀態)<br>
-      <b>後台版</b>: 完整資訊 + 班別、時數、狀態 + <b>報名連結</b> (僅後台人員看)
+      信件含完整資訊:場次、主辦、日期(含星期)、時間、地點、班別、時數、費用、狀態、報名連結 — 按開課日升冪排序
     </div>
   </div>
 
@@ -2250,35 +2252,66 @@ async function startUpdate() {
   }
 }
 
+// === 日期/時數 格式化 helpers (commit 14) ===
+function _formatDateWithWeekday(s) {
+  if (!s) return '';
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return s;
+  if (/\([一二三四五六日]\)$/.test(s)) return s;  // 已有星期就保留原樣
+  const [, yy, mm, dd] = m;
+  const dt = new Date(parseInt(yy), parseInt(mm)-1, parseInt(dd));
+  if (isNaN(dt.getTime())) return s;
+  return `${yy}-${mm}-${dd}(${['日','一','二','三','四','五','六'][dt.getDay()]})`;
+}
+function _formatDateRange(c) {
+  const s = _formatDateWithWeekday(c.start_date || '');
+  const e = _formatDateWithWeekday(c.end_date || '');
+  if (!s) return '';
+  if (!e) return s;
+  const sP = s.replace(/\([^)]*\)$/, '');
+  const eP = e.replace(/\([^)]*\)$/, '');
+  if (sP === eP) return s;
+  return `${s} 至 ${e}`;
+}
+function _normalizeHours(h) {
+  if (!h) return '';
+  const n = parseFloat(h);
+  if (isNaN(n)) return String(h);
+  return n % 1 === 0 ? String(Math.round(n)) : String(n);
+}
+
 function renderTable() {
   const kw = document.getElementById('searchKw').value.toLowerCase();
-  const branch = '';  // 已改為 multi-select
+  const institute = document.getElementById('filterInstitute').value;
   const cat = document.getElementById('filterCategory').value;
   const nat = document.getElementById('filterNationality').value;
   const stat = document.getElementById('filterStatus').value;
   const cls = document.getElementById('filterClass').value;
-  
+
   let visible = allCourses;
   if (kw) {
     const keywords = kw.split(/[,，]/).map(k => k.trim()).filter(Boolean);
     visible = visible.filter(c => keywords.some(k => c.name.toLowerCase().includes(k)));
   }
-  // 分會多選篩選
+  if (institute) visible = visible.filter(c => c.institute === institute);
   if (selectedBranches.size > 0) {
     visible = visible.filter(c => selectedBranches.has(c.branch));
   } else {
-    visible = [];  // 沒選任何分會 = 不顯示
+    visible = [];
   }
   if (cat) visible = visible.filter(c => c.category === cat);
   if (nat) visible = visible.filter(c => c.nationality === nat);
   if (stat === 'open') visible = visible.filter(c => /確定開班|招生|強力/.test(c.status));
   if (stat === 'full') visible = visible.filter(c => /額滿/.test(c.status));
   if (cls) visible = visible.filter(c => c.class_type.includes(cls));
-  
+
+  // 按開課日升冪排序 (近的在前)
+  visible.sort((a, b) => (a.start_date || '9999').localeCompare(b.start_date || '9999'));
+
   document.getElementById('totalCount').textContent = allCourses.length;
   document.getElementById('visCount').textContent = visible.length;
   document.getElementById('selCount').textContent = selected.size;
-  
+
   const tbody = document.getElementById('tbody');
   if (visible.length === 0) {
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:50px;color:#999;cursor:default;">沒有符合條件的課程</td></tr>';
@@ -2286,15 +2319,20 @@ function renderTable() {
   }
   tbody.innerHTML = visible.map(c => {
     const isSel = selected.has(c.id);
+    const dateStr = _formatDateRange(c);
+    const hoursStr = _normalizeHours(c.hours);
+    const classCell = c.class_time
+      ? `${escHtml(c.class_type)}<br><small style="color:#888;font-size:11px;">${escHtml(c.class_time)}</small>`
+      : escHtml(c.class_type);
     return `<tr class="${isSel?'selected':''}" onclick="toggleSel('${escHtml(c.id)}')">
       <td style="text-align:center;"><div class="big-check">${isSel?'✓':''}</div></td>
       <td><strong>${escHtml(c.name)}</strong></td>
       <td>${escHtml(c.branch)}</td>
       <td>${catBadge(c.category)}</td>
       <td>${natBadge(c.nationality)}</td>
-      <td>${escHtml(c.start_date)}</td>
-      <td>${escHtml(c.class_type)}</td>
-      <td style="text-align:center;">${escHtml(c.hours)}</td>
+      <td>${escHtml(dateStr)}</td>
+      <td>${classCell}</td>
+      <td style="text-align:center;">${escHtml(hoursStr)}</td>
       <td style="text-align:right;">${escHtml(c.fee)}</td>
       <td>${statBadge(c.status)}</td>
     </tr>`;
@@ -2372,8 +2410,7 @@ async function buildEmail(mode) {
   return await resp.json();
 }
 
-async function previewExternal() { await preview('external', '同仁版'); }
-async function previewInternal() { await preview('internal', '後台版'); }
+async function previewExternal() { await preview('external', '信件'); }
 
 async function preview(mode, label) {
   const e = await buildEmail(mode);
@@ -2384,8 +2421,7 @@ async function preview(mode, label) {
   document.getElementById('previewModal').classList.add('show');
 }
 
-async function generateExternal() { await generate('external', '同仁'); }
-async function generateInternal() { await generate('internal', '後台'); }
+async function generateExternal() { await generate('external', '信件'); }
 
 async function generate(mode, label) {
   if (selected.size === 0) { toast('請先挑選至少一個課程', 'error'); return; }
