@@ -1425,6 +1425,39 @@ def api_update():
     return jsonify({"ok": True, "count": len(data["courses"]), "last_updated": data["last_updated"]})
 
 
+def _format_date_with_weekday(date_str):
+    """加上星期。'2026-06-05' → '2026-06-05(四)'。已有 (X) 結尾的保留原樣。"""
+    if not date_str:
+        return ""
+    m = re.match(r"(\d{4}-\d{2}-\d{2})", date_str)
+    if not m:
+        return date_str
+    ymd = m.group(1)
+    if re.search(r"\([一二三四五六日]\)$", date_str):
+        return date_str
+    try:
+        dt = datetime.strptime(ymd, "%Y-%m-%d")
+        weekdays = ["一", "二", "三", "四", "五", "六", "日"]
+        return f"{ymd}({weekdays[dt.weekday()]})"
+    except Exception:
+        return date_str
+
+
+def _format_date_range(course):
+    """組合 start_date / end_date → 「2026-06-01(一) 至 2026-06-05(五)」;同一天只顯示開始日。"""
+    start = _format_date_with_weekday(course.get("start_date", ""))
+    end = _format_date_with_weekday(course.get("end_date", ""))
+    if not start:
+        return ""
+    if not end:
+        return start
+    s_pure = re.sub(r"\([^)]*\)$", "", start)
+    e_pure = re.sub(r"\([^)]*\)$", "", end)
+    if s_pure == e_pure:
+        return start
+    return f"{start} 至 {end}"
+
+
 @app.route("/api/email", methods=["POST"])
 @login_required
 
@@ -1506,7 +1539,7 @@ def api_email():
             html_parts.append(
                 f'<tr><td style="text-align:center;border:1px solid #BBB;"><b>{i}</b></td>'
                 f'<td style="border:1px solid #BBB;">{c.get("institute","")} ({c.get("branch","")})</td>'
-                f'<td style="border:1px solid #BBB;">{c.get("start_date","")}</td>'
+                f'<td style="border:1px solid #BBB;">{_format_date_range(c)}</td>'
                 f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
                 f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
                 f'<td style="text-align:right;border:1px solid #BBB;">{c.get("fee","")} 元</td></tr>'
