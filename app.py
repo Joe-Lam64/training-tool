@@ -461,13 +461,20 @@ class TichaScraper:
                                 course_id = m.group(1)
                             register_url = href if href.startswith("http") else base_domain + href
                             break
-                    if not course_id:
+                    # commit 16: 額滿課可能沒 reg_course → 改用 brochure 或列表頁
+                    if not course_id or not register_url:
                         for a in tr.find_all("a", href=True):
                             if "download_brochure" in a["href"]:
-                                m = re.search(r"id=(\d+)", a["href"])
-                                if m:
-                                    course_id = m.group(1)
+                                href = a["href"]
+                                if not course_id:
+                                    mid = re.search(r"id=(\d+)", href)
+                                    if mid:
+                                        course_id = mid.group(1)
+                                if not register_url:
+                                    register_url = href if href.startswith("http") else base_domain + href
                                 break
+                    if not register_url:
+                        register_url = url
                     if category == "未知":
                         try:
                             h = int(hours)
@@ -667,16 +674,25 @@ class CPCScraper:
         soup = BeautifulSoup(html, "html.parser")
         address = ""
         fee = ""
+        # commit 16: 用 in 比對(不是 ==),適應 "上課地點:" 之類的變化
         for tr in soup.find_all("tr"):
             th = tr.find("th")
-            td = tr.find("td")
-            if not th or not td:
+            if not th:
                 continue
-            if th.get_text(strip=True) == "上課地點":
-                address = " ".join(td.get_text(separator=" ", strip=True).split())
-                break
+            if "上課地點" in th.get_text(strip=True):
+                td = tr.find("td")
+                if td:
+                    address = " ".join(td.get_text(separator=" ", strip=True).split())
+                    break
+        # commit 16: fallback - 全文搜尋「上課地點」
+        if not address:
+            body_text = soup.get_text(separator="\n", strip=True)
+            mloc = re.search(r"上課地點[:\uff1a]?\s*([^\n]+)", body_text)
+            if mloc:
+                address = mloc.group(1).strip()
+        # 費用
         ps = soup.select_one("span.text-red.lead")
-        if (ps := soup.select_one("span.text-red.lead")):
+        if ps:
             fee = ps.get_text(strip=True).replace(",", "")
         return address, fee
 
@@ -1443,6 +1459,18 @@ def _format_date_with_weekday(date_str):
         return date_str
 
 
+def _format_fee(fee):
+    """費用顯示:免費類 → 「免費」;空/0 → 「—」;數字 → 「XXX 元」"""
+    s = str(fee or "").strip()
+    if not s or s == "0":
+        return "—"
+    if "免" in s:
+        return "免費"
+    if s.endswith("元"):
+        return s
+    return f"{s} 元"
+
+
 def _format_date_range(course):
     """組合 start_date / end_date → 「2026-06-01(一) 至 2026-06-05(五)」;同一天只顯示開始日。"""
     start = _format_date_with_weekday(course.get("start_date", ""))
@@ -1535,7 +1563,6 @@ def api_email():
         '<td style="border:1px solid #BBB;">上課地點</td>',
         '<td style="border:1px solid #BBB;">時數</td>',
         '<td style="border:1px solid #BBB;">費用</td>',
-        '<td style="border:1px solid #BBB;">狀態</td>',
         '<td style="border:1px solid #BBB;">報名連結</td></tr>',
     ])
     for i, c in enumerate(selected_sorted, 1):
@@ -1548,8 +1575,7 @@ def api_email():
             f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
             f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
             f'<td style="text-align:center;border:1px solid #BBB;">{c.get("hours","")} 小時</td>'
-            f'<td style="text-align:right;border:1px solid #BBB;">{c.get("fee","")} 元</td>'
-            f'<td style="text-align:center;border:1px solid #BBB;">{c.get("status","")}</td>'
+            f'<td style="text-align:right;border:1px solid #BBB;">{_format_fee(c.get("fee",""))}</td>'
             f'<td style="border:1px solid #BBB;">{link_html}</td></tr>'
         )
     
