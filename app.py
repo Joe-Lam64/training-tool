@@ -326,11 +326,11 @@ class TichaScraper:
     
     @classmethod
     def scrape(cls, fetch_details=False):
-        """快速版:只抓列表,不抓詳細頁 (15 秒搞定)"""
+        """Commit 18d: 抓列表 + 詳細頁(學科/術科)。第二次跑有 cache 會快很多。"""
         cls._progress = {"stage": "list", "current": 0, "total": len(cls.branches), "message": "正在抓取課程列表..."}
         all_courses = []
         seen = set()
-        
+
         for i, (branch_name, base_url) in enumerate(cls.branches.items()):
             try:
                 cls._progress["current"] = i + 1
@@ -346,27 +346,54 @@ class TichaScraper:
                 print(f"    → 找到 {new_count} 筆")
             except Exception as e:
                 print(f"    ✗ 失敗: {e}")
-        
+
+        # === Commit 18d: 啟用 detail 抓取(學科 / 術科地址)===
+        cls._fetch_all_details(all_courses)
+        # ====================================================
+
         cls._progress = {"stage": "done", "current": 0, "total": 0, "message": "完成"}
         return all_courses
     
     @classmethod
     def _fetch_all_details(cls, courses):
-        """對每個課程抓詳細頁取得真實上課地點"""
-        targets = [c for c in courses if c.get("course_id")]
-        cls._progress = {"stage": "details", "current": 0, "total": len(targets), "message": "抓詳細地址..."}
-        
-        for i, course in enumerate(targets):
-            cls._progress["current"] = i + 1
-            cls._progress["message"] = f"抓詳細地址 ({i+1}/{len(targets)}): {course['name'][:20]}"
-            if (i + 1) % 20 == 0:
-                print(f"    詳細地址進度: {i+1}/{len(targets)}")
-            
+        """Commit 18d: 抓詳細地址 + cache lookup + 並行(原本是序列,現在並行+跳 cache)。"""
+        from concurrent.futures import ThreadPoolExecutor
+
+        # === Commit 18d: cache 查詢(跳過已抓過的 detail)===
+        cache = getattr(cls, "_cache", {}) or {}
+        force_refresh = getattr(cls, "_force_refresh", False)
+
+        targets_to_fetch = []
+        cache_hit_count = 0
+        for course in courses:
+            if not course.get("course_id"):
+                continue
+            cached = cache.get(course["id"])
+            if not force_refresh and cached and cached.get("location"):
+                # Cache hit:直接複製,跳過 detail
+                course["location"] = cached["location"]
+                cache_hit_count += 1
+            else:
+                targets_to_fetch.append(course)
+
+        print(f"  [Ticsha] Cache hit: {cache_hit_count} 筆(跳過 detail),需抓 detail: {len(targets_to_fetch)} 筆")
+        # =====================================================
+
+        cls._progress = {"stage": "details", "current": 0, "total": len(targets_to_fetch), "message": "Ticsha 抓詳細地址..."}
+
+        def _grab(course):
             detail_addr = cls._fetch_detail(course)
             if detail_addr:
                 course["location"] = detail_addr
             else:
-                course["location"] = f"上課地點待協會公告,請以報名連結頁面為準 ({course['branch']}分會)"
+                # 抓不到 detail 就 fallback 用分會固定地址
+                course["location"] = BRANCH_ADDRESSES.get(course["branch"], f"{course['branch']} (詳洽協會)")
+            return course
+
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            for i, _ in enumerate(pool.map(_grab, targets_to_fetch)):
+                cls._progress["current"] = i + 1
+                cls._progress["message"] = f"Ticsha 抓詳細地址 ({i+1}/{len(targets_to_fetch)})"
     
     @classmethod
     def _fetch_detail(cls, course):
