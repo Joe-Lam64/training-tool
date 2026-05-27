@@ -1337,8 +1337,11 @@ def update_courses(codes, force_refresh=False):
         print("⚡ 強制全抓模式:忽略 cache,所有課程都會重抓 detail")
     else:
         cache_by_scraper = _build_cache_by_scraper(old_data.get("courses", []))
-        for ckey, cmap in cache_by_scraper.items():
-            print(f"📦 Cache: {ckey} 有 {len(cmap)} 筆舊資料可用")
+        if cache_by_scraper:
+            for ckey, cmap in cache_by_scraper.items():
+                print(f"📦 Cache: {ckey} 有 {len(cmap)} 筆舊資料可用(detail 頁可跳過)")
+        else:
+            print("📦 Cache: 空(第一次跑或容器重啟,所有 detail 都會抓)")
     # ===============================================
 
     all_courses = [c for c in old_data.get("courses", []) if c.get("_scraper_code") not in codes]
