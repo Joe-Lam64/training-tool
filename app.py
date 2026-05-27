@@ -1161,9 +1161,9 @@ class ISHAScraper:
             if not _loc_xueke and not _loc_shuke:
                 if (m := re.search(r"上課地[址點]\s*[:：]\s*([^\n]+)", text)):
                     _loc_xueke = m.group(1).strip()
-            # 合併
+            # 合併 (Commit 18c: 改用換行格式,跟 CPC 一致,信件會自動轉 <br>)
             if _loc_xueke and _loc_shuke and _loc_xueke != _loc_shuke:
-                course["location"] = f"學科: {_loc_xueke} | 術科: {_loc_shuke}"
+                course["location"] = f"學科:{_loc_xueke}\n術科:{_loc_shuke}"
             elif _loc_xueke:
                 course["location"] = _loc_xueke
             elif _loc_shuke:
@@ -1302,9 +1302,34 @@ class ISHAScraper:
         print(f"  [ISHA] 列表抓完,共 {len(all_rows)} 筆")
 
         if fetch_details and all_rows:
+            # === Commit 18c: cache 查詢(跳過已抓過的 detail)===
+            cache = getattr(cls, "_cache", {}) or {}
+            force_refresh = getattr(cls, "_force_refresh", False)
+
+            # 要從 cache 複製的欄位(都是 detail 頁才有的欄位)
+            _isha_cache_fields = ["branch", "start_date", "end_date", "hours", "category",
+                                  "fee", "location", "class_time", "deadline"]
+
+            targets_to_fetch = []
+            cache_hit_count = 0
+            for course in all_rows:
+                cached = cache.get(course["id"])
+                if not force_refresh and cached and cached.get("location"):
+                    # Cache hit:複製 detail 頁抓的欄位,跳過 detail 抓取
+                    for _field in _isha_cache_fields:
+                        if cached.get(_field):
+                            course[_field] = cached[_field]
+                    cache_hit_count += 1
+                else:
+                    # Cache miss:加入待抓清單
+                    targets_to_fetch.append(course)
+
+            print(f"  [ISHA] Cache hit: {cache_hit_count} 筆(跳過 detail),需抓 detail: {len(targets_to_fetch)} 筆")
+            # ==================================================
+
             cls._progress = {
-                "stage": "details", "current": 0, "total": len(all_rows),
-                "message": f"ISHA 抓詳細 0/{len(all_rows)}...",
+                "stage": "details", "current": 0, "total": len(targets_to_fetch),
+                "message": f"ISHA 抓詳細 0/{len(targets_to_fetch)}...",
             }
 
             def _isha_do(c):
@@ -1312,9 +1337,9 @@ class ISHAScraper:
                 return c
 
             with ThreadPoolExecutor(max_workers=24) as pool:
-                for idx, _ in enumerate(pool.map(_isha_do, all_rows)):
+                for idx, _ in enumerate(pool.map(_isha_do, targets_to_fetch)):
                     cls._progress["current"] = idx + 1
-                    cls._progress["message"] = f"ISHA 抓詳細 {idx+1}/{len(all_rows)}..."
+                    cls._progress["message"] = f"ISHA 抓詳細 {idx+1}/{len(targets_to_fetch)}..."
 
         filtered = [c for c in all_rows if c.get("branch") in ("台北", "新北", "桃園", "中壢", "新竹")]
         non_north_count = len(all_rows) - len(filtered)
