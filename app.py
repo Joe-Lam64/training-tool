@@ -1553,7 +1553,12 @@ def api_email():
             f'<td style="border:1px solid #BBB;">{link_html}</td></tr>'
         )
     
-    html_parts.extend(['</table>', '<p>敬請回覆,謝謝!</p>', '</div>'])
+    html_parts.extend([
+        '</table>',
+        '<p style="color:#C44569;font-size:12px;margin:8px 0;font-weight:600;">※ 報名連結為訓練單位協助報名使用,請勿自行點擊/報名</p>',
+        '<p>敬請回覆,謝謝!</p>',
+        '</div>',
+    ])
     return jsonify({"subject": subject, "html": "".join(html_parts)})
 
 
