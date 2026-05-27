@@ -671,25 +671,61 @@ class CPCScraper:
 
     @classmethod
     def _parse_detail(cls, html):
+        """Commit 18b: 學科 / 術科 分開抓,合併時用換行符號連接。"""
         soup = BeautifulSoup(html, "html.parser")
-        address = ""
         fee = ""
-        # commit 16: 用 in 比對(不是 ==),適應 "上課地點:" 之類的變化
+
+        # === 學科 / 術科 分開抓 ===
+        _loc_xueke = ""   # 學科
+        _loc_shuke = ""   # 術科
+
+        # Strategy A: <tr>/<th>/<td> 結構優先
         for tr in soup.find_all("tr"):
             th = tr.find("th")
             if not th:
                 continue
-            if "上課地點" in th.get_text(strip=True):
-                td = tr.find("td")
-                if td:
-                    address = " ".join(td.get_text(separator=" ", strip=True).split())
-                    break
-        # commit 16: fallback - 全文搜尋「上課地點」
-        if not address:
+            th_text = th.get_text(strip=True)
+            td = tr.find("td")
+            if not td:
+                continue
+            td_text = " ".join(td.get_text(separator=" ", strip=True).split())
+
+            if "學科上課地點" in th_text or "學科上課地址" in th_text:
+                _loc_xueke = td_text
+            elif "術科上課地點" in th_text or "術科上課地址" in th_text:
+                _loc_shuke = td_text
+            elif ("上課地點" in th_text or "上課地址" in th_text) and not _loc_xueke and not _loc_shuke:
+                # 沒分學科 / 術科時當作學科
+                _loc_xueke = td_text
+
+        # Strategy B: 全文 regex fallback(網站可能改版)
+        if not _loc_xueke or not _loc_shuke:
             body_text = soup.get_text(separator="\n", strip=True)
-            mloc = re.search(r"上課地點[:\uff1a]?\s*([^\n]+)", body_text)
-            if mloc:
-                address = mloc.group(1).strip()
+            if not _loc_xueke:
+                m = re.search(r"學科上課地[址點][:\uff1a]?\s*([^\n]+)", body_text)
+                if m:
+                    _loc_xueke = m.group(1).strip()
+            if not _loc_shuke:
+                m = re.search(r"術科上課地[址點][:\uff1a]?\s*([^\n]+)", body_text)
+                if m:
+                    _loc_shuke = m.group(1).strip()
+            # 都沒抓到 → 用一般「上課地點」當 fallback
+            if not _loc_xueke and not _loc_shuke:
+                m = re.search(r"上課地[址點][:\uff1a]?\s*([^\n]+)", body_text)
+                if m:
+                    _loc_xueke = m.group(1).strip()
+
+        # 合併(換行格式,儲存時用 \n,信件顯示時會轉 <br>)
+        if _loc_xueke and _loc_shuke and _loc_xueke != _loc_shuke:
+            address = f"學科:{_loc_xueke}\n術科:{_loc_shuke}"
+        elif _loc_xueke:
+            address = _loc_xueke
+        elif _loc_shuke:
+            address = _loc_shuke
+        else:
+            address = ""
+        # ========================================
+
         # 費用
         ps = soup.select_one("span.text-red.lead")
         if ps:
@@ -748,11 +784,31 @@ class CPCScraper:
                         seen_ids.add(c["id"])
                         all_courses.append(c)
 
-        # 階段 3:對篩選後的課程抓詳細頁拿地址+費用
+        # 階段 3:對篩選後的課程抓詳細頁拿地址+費用(Commit 18b: cache 加速)
         if fetch_details and all_courses:
+            # === Commit 18b: cache 查詢(跳過已抓過的 detail)===
+            cache = getattr(cls, "_cache", {}) or {}
+            force_refresh = getattr(cls, "_force_refresh", False)
+
+            targets_to_fetch = []
+            cache_hit_count = 0
+            for course in all_courses:
+                cached = cache.get(course["id"])
+                if not force_refresh and cached and cached.get("location"):
+                    # Cache hit:直接複製 location + fee,跳過 detail 頁
+                    course["location"] = cached.get("location", "")
+                    course["fee"] = cached.get("fee", "")
+                    cache_hit_count += 1
+                else:
+                    # Cache miss(新課 / 上次失敗 / 強制全抓):加入待抓清單
+                    targets_to_fetch.append(course)
+
+            print(f"  [CPC] Cache hit: {cache_hit_count} 筆(跳過 detail),需抓 detail: {len(targets_to_fetch)} 筆")
+            # ===================================================
+
             cls._progress = {
-                "stage": "details", "current": 0, "total": len(all_courses),
-                "message": f"抓 CPC 課程詳細資料 0/{len(all_courses)}..."
+                "stage": "details", "current": 0, "total": len(targets_to_fetch),
+                "message": f"抓 CPC 課程詳細資料 0/{len(targets_to_fetch)}..."
             }
 
             def grab_detail(course):
@@ -766,9 +822,9 @@ class CPCScraper:
                 return course
 
             with ThreadPoolExecutor(max_workers=12) as pool:
-                for idx, _ in enumerate(pool.map(grab_detail, all_courses)):
+                for idx, _ in enumerate(pool.map(grab_detail, targets_to_fetch)):
                     cls._progress["current"] = idx + 1
-                    cls._progress["message"] = f"抓 CPC 詳細 {idx+1}/{len(all_courses)}..."
+                    cls._progress["message"] = f"抓 CPC 詳細 {idx+1}/{len(targets_to_fetch)}..."
 
         cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
         print(f"  [CPC] 完成,共 {len(all_courses)} 堂課(桃園+台北)")
@@ -1637,7 +1693,7 @@ def api_email():
             f'<td style="border:1px solid #BBB;">{c.get("institute","")} ({c.get("branch","")})</td>'
             f'<td style="border:1px solid #BBB;">{_format_date_range(c)}</td>'
             f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
-            f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
+            f'<td style="border:1px solid #BBB;">{c.get("location","").replace(chr(10), "<br>")}</td>'
             f'<td style="text-align:center;border:1px solid #BBB;">{c.get("hours","")} 小時</td>'
             f'<td style="text-align:right;border:1px solid #BBB;">{_format_fee(c.get("fee",""))}</td>'
             f'<td style="border:1px solid #BBB;">{link_html}</td></tr>'
