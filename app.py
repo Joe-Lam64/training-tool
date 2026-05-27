@@ -1533,7 +1533,6 @@ def api_email():
         '<td style="border:1px solid #BBB;">日期</td>',
         '<td style="border:1px solid #BBB;">上課時間</td>',
         '<td style="border:1px solid #BBB;">上課地點</td>',
-        '<td style="border:1px solid #BBB;">班別</td>',
         '<td style="border:1px solid #BBB;">時數</td>',
         '<td style="border:1px solid #BBB;">費用</td>',
         '<td style="border:1px solid #BBB;">狀態</td>',
@@ -1548,7 +1547,6 @@ def api_email():
             f'<td style="border:1px solid #BBB;">{_format_date_range(c)}</td>'
             f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
             f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
-            f'<td style="text-align:center;border:1px solid #BBB;">{c.get("class_type","")}</td>'
             f'<td style="text-align:center;border:1px solid #BBB;">{c.get("hours","")} 小時</td>'
             f'<td style="text-align:right;border:1px solid #BBB;">{c.get("fee","")} 元</td>'
             f'<td style="text-align:center;border:1px solid #BBB;">{c.get("status","")}</td>'
@@ -1704,6 +1702,17 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   }
   button.btn-secondary:hover { background: var(--sky); }
   
+  /* === Institute update button (commit 15: 單獨更新此協會) === */
+  .inst-update-btn {
+    background: white; color: var(--blue); border: 1.5px solid var(--blue);
+    padding: 6px 12px; font-family: inherit; font-size: 11px; font-weight: 700;
+    border-radius: 8px; cursor: pointer; flex-shrink: 0; white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .inst-update-btn:hover {
+    background: var(--blue); color: white; transform: translateY(-1px);
+  }
+
   /* === Institute card (協會勾選) === */
   .inst-card {
     background: linear-gradient(135deg, #F0F8FF 0%, #E8F5F0 100%);
@@ -1914,24 +1923,27 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
       <label class="inst-card checked" id="instTicsha" onclick="toggleInst('ticsha')">
         <input type="checkbox" id="instCheckTicsha" checked>
-        <div>
+        <div style="flex:1;">
           <div class="label">台灣省工商安全衛生協會</div>
           <div class="desc">中壢 · 桃園 · 新竹 三個分會</div>
         </div>
+        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('ticsha');" title="只更新此協會,不影響其他">🔄 只更新</button>
       </label>
-         <label class="inst-card checked" id="instCpc" onclick="toggleInst('cpc')">
-          <input type="checkbox" id="instCheckCpc" checked>
-          <div>
-            <div class="label">中國生產力中心 (CPC)</div>
-            <div class="desc">桃園 · 台北承德 / 職安·消防·營建 三類</div>
-          </div>
-        </label>
+      <label class="inst-card checked" id="instCpc" onclick="toggleInst('cpc')">
+        <input type="checkbox" id="instCheckCpc" checked>
+        <div style="flex:1;">
+          <div class="label">中國生產力中心 (CPC)</div>
+          <div class="desc">桃園 · 台北承德 / 職安·消防·營建 三類</div>
+        </div>
+        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('cpc');" title="只更新此協會,不影響其他">🔄 只更新</button>
+      </label>
       <label class="inst-card checked" id="instIsha" onclick="toggleInst('isha')">
         <input type="checkbox" id="instCheckIsha" checked>
-        <div>
+        <div style="flex:1;">
           <div class="label">中華民國工業安全衛生協會 (ISHA)</div>
           <div class="desc">北區 5 個職訓中心:台北·新北·桃園·中壢·新竹</div>
         </div>
+        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('isha');" title="只更新此協會,不影響其他">🔄 只更新</button>
       </label>
       <button class="btn-primary" onclick="startUpdate()">🔄 立即更新</button>
     </div>
@@ -2196,6 +2208,49 @@ document.addEventListener('click', function(e) {
     document.getElementById('branchDropdown').style.display = 'none';
   }
 });
+
+// === Commit 15: 單獨更新某一個協會 (不影響其他) ===
+async function updateOnly(code) {
+  const labels = {ticsha: '台灣省工商安全衛生協會', cpc: '中國生產力中心', isha: '中華民國工業安全衛生協會'};
+  const label = labels[code] || code;
+  if (!confirm(`只更新「${label}」?\n\n其他協會的資料會保留不動。`)) return;
+  showLoading(`正在抓取 ${label}...`);
+  const progressTimer = setInterval(async () => {
+    try {
+      const r = await fetch('/api/update_progress');
+      const p = await r.json();
+      if (p.stage === 'list') {
+        document.getElementById('loadingText').innerHTML =
+          `📋 ${p.message}<br><small style="opacity:0.7;">${p.current}/${p.total}</small>`;
+      } else if (p.stage === 'details') {
+        const pct = p.total > 0 ? Math.round(p.current / p.total * 100) : 0;
+        document.getElementById('loadingText').innerHTML =
+          `📍 ${p.message}<br>
+           <small style="opacity:0.7;">${p.current}/${p.total} (${pct}%)</small><br>
+           <div style="background:#eee;border-radius:8px;height:8px;margin-top:8px;overflow:hidden;width:280px;">
+             <div style="background:linear-gradient(90deg,#4FB3BF,#87BDD8);height:100%;width:${pct}%;transition:width 0.3s;"></div>
+           </div>`;
+      }
+    } catch(e) {}
+  }, 1000);
+  try {
+    const resp = await fetch('/api/update', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({scrapers: [code]})
+    });
+    if (resp.status === 401) { window.location.href = '/login'; return; }
+    const data = await resp.json();
+    if (data.ok) {
+      toast(`✓ ${label} 更新完成! 共 ${data.count} 筆課程`, 'success');
+      await loadCourses();
+    }
+  } catch (e) {
+    toast('更新失敗: ' + e.message, 'error');
+  } finally {
+    clearInterval(progressTimer);
+    hideLoading();
+  }
+}
 
 async function startUpdate() {
   showLoading('正在抓取課程資料...');
