@@ -1555,6 +1555,7 @@ def api_email():
     # 合併版:不分同仁/後台,一張完整表;按開課日升冪排序(近的在前)
     selected_sorted = sorted(selected, key=lambda c: c.get("start_date", "") or "9999-99-99")
     html_parts.extend([
+        '<tr style="background:#FFF3CD;"><td colspan="8" style="border:1px solid #BBB;color:#C44569;font-weight:700;padding:10px;text-align:center;font-size:13px;">※ 報名連結為訓練單位協助報名使用,請勿自行點擊/報名</td></tr>',
         '<tr style="background:#4472C4;color:white;font-weight:bold;">',
         '<td style="border:1px solid #BBB;">場次</td>',
         '<td style="border:1px solid #BBB;">主辦單位</td>',
@@ -1581,7 +1582,6 @@ def api_email():
     
     html_parts.extend([
         '</table>',
-        '<p style="color:#C44569;font-size:12px;margin:8px 0;font-weight:600;">※ 報名連結為訓練單位協助報名使用,請勿自行點擊/報名</p>',
         '<p>敬請回覆,謝謝!</p>',
         '</div>',
     ])
