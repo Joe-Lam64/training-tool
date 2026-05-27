@@ -1294,11 +1294,61 @@ def save_data(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def update_courses(codes):
-    all_courses = [c for c in load_data().get("courses", []) if c.get("_scraper_code") not in codes]
+# === Commit 18a: cache 與 cutoff 設定 ===
+CUTOFF_DAYS_PAST = 7      # 已開課 7 天內仍保留(報名截止可能還沒過)
+CUTOFF_DAYS_FUTURE = 180  # 只看未來半年內的課
+
+
+def _build_cache_by_scraper(courses):
+    """把上次的課程資料按 scraper code 分組,變成 {scraper_code: {course_id: course}}。"""
+    cache = {}
+    for c in courses:
+        code = c.get("_scraper_code", "")
+        if not code:
+            continue
+        cache.setdefault(code, {})[c.get("id", "")] = c
+    return cache
+
+
+def _is_in_cutoff_range(course, today=None):
+    """檢查開課日是否在 [-CUTOFF_DAYS_PAST, +CUTOFF_DAYS_FUTURE] 範圍內。
+    沒有 start_date 的保留(寬鬆),避免漏掉沒抓到日期的課。"""
+    from datetime import date as _date, datetime as _dt
+    sd = (course.get("start_date") or "").strip()
+    if not sd:
+        return True
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", sd)
+    if not m:
+        return True
+    try:
+        course_date = _dt.strptime(m.group(0), "%Y-%m-%d").date()
+        today = today or _date.today()
+        delta_days = (course_date - today).days
+        return -CUTOFF_DAYS_PAST <= delta_days <= CUTOFF_DAYS_FUTURE
+    except Exception:
+        return True
+
+
+def update_courses(codes, force_refresh=False):
+    # === Commit 18a: 建立 cache(從上次抓過的資料)===
+    old_data = load_data()
+    if force_refresh:
+        cache_by_scraper = {}
+        print("⚡ 強制全抓模式:忽略 cache,所有課程都會重抓 detail")
+    else:
+        cache_by_scraper = _build_cache_by_scraper(old_data.get("courses", []))
+        for ckey, cmap in cache_by_scraper.items():
+            print(f"📦 Cache: {ckey} 有 {len(cmap)} 筆舊資料可用")
+    # ===============================================
+
+    all_courses = [c for c in old_data.get("courses", []) if c.get("_scraper_code") not in codes]
     for code in codes:
         if code in SCRAPERS:
             scraper = SCRAPERS[code]
+            # === Commit 18a: 把 cache 給 scraper(透過 class attribute,scraper 內部可選擇使用)===
+            scraper._cache = cache_by_scraper.get(code, {})
+            scraper._force_refresh = force_refresh
+            # =================================================================================
             print(f"\n=== 更新 {scraper.name} ===")
             try:
                 new_rows = [{**c, "_scraper_code": code} for c in scraper.scrape()]
@@ -1311,6 +1361,15 @@ def update_courses(codes):
                 print(f"=== {scraper.name} 失敗: {e} ===")
                 import traceback
                 traceback.print_exc()
+
+    # === Commit 18a: 課程 cutoff 過濾(只留 -7d ~ +180d)===
+    before_filter = len(all_courses)
+    all_courses = [c for c in all_courses if _is_in_cutoff_range(c)]
+    after_filter = len(all_courses)
+    if before_filter != after_filter:
+        print(f"📅 Cutoff 過濾:{before_filter} → {after_filter} 筆 (-{CUTOFF_DAYS_PAST}d ~ +{CUTOFF_DAYS_FUTURE}d)")
+    # ======================================================
+
     data = {"courses": all_courses, "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
     save_data(data)
     return data
@@ -1437,7 +1496,8 @@ def api_update_progress():
 def api_update():
     body = request.get_json() or {}
     codes = body.get("scrapers", ["ticsha"])
-    data = update_courses(codes)
+    force_refresh = bool(body.get("force_refresh", False))
+    data = update_courses(codes, force_refresh=force_refresh)
     return jsonify({"ok": True, "count": len(data["courses"]), "last_updated": data["last_updated"]})
 
 
@@ -1990,6 +2050,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
           <div class="toggle-switch" id="autoUpdateToggle" onclick="alert('自動更新功能將於下版開放\\n屆時可設定每天 / 每週的自動抓取時間')"></div>
         </div>
+        <div class="setting-row">
+          <div>
+            <div style="font-weight:600;">⚡ 強制全抓 (忽略 cache)</div>
+            <div class="info-line">懷疑協會偷改地址、或第一次跑時用。會比「立即更新」慢一些,平常不需要按。</div>
+          </div>
+          <button type="button" onclick="if(confirm('確定要強制全抓嗎?\n\n所有協會的詳細頁都會重抓,時間約 8-10 分鐘。\n平常請用上方「立即更新」即可。')) startUpdate(true);"
+                  style="background:linear-gradient(135deg,#FFB6B9,#FAE3D9);color:#B73E3E;border:none;padding:10px 18px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
+            ⚡ 強制全抓
+          </button>
+        </div>
       </div>
     </details>
   </div>
@@ -2283,8 +2353,8 @@ async function updateOnly(code) {
   }
 }
 
-async function startUpdate() {
-  showLoading('正在抓取課程資料...');
+async function startUpdate(forceRefresh = false) {
+  showLoading(forceRefresh ? '⚡ 強制全抓中(較慢,請耐心等候)...' : '正在抓取課程資料...');
   
   // 啟動 polling 取得進度
   const progressTimer = setInterval(async () => {
@@ -2302,7 +2372,7 @@ async function startUpdate() {
            <div style="background:#eee;border-radius:8px;height:8px;margin-top:8px;overflow:hidden;width:280px;">
              <div style="background:linear-gradient(90deg,#4FB3BF,#87BDD8);height:100%;width:${pct}%;transition:width 0.3s;"></div>
            </div>
-           <small style="opacity:0.6;font-size:11px;margin-top:6px;display:block;">這需要約 5-10 分鐘,請耐心等候</small>`;
+           <small style="opacity:0.6;font-size:11px;margin-top:6px;display:block;">${forceRefresh ? '強制全抓:約 8-10 分鐘' : '一般更新:約 3-5 分鐘(cache 生效後)'},請耐心等候</small>`;
       }
     } catch(e) {}
   }, 1000);
@@ -2321,13 +2391,13 @@ async function startUpdate() {
     }
     const resp = await fetch('/api/update', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({scrapers: scraperCodes})
+      body: JSON.stringify({scrapers: scraperCodes, force_refresh: forceRefresh})
     });
     
     if (resp.status === 401) { window.location.href = '/login'; return; }
     const data = await resp.json();
     if (data.ok) {
-      toast(`✓ 更新完成! 共 ${data.count} 筆課程`, 'success');
+      toast(`✓ 更新完成! 共 ${data.count} 筆課程${forceRefresh ? ' (強制全抓)' : ''}`, 'success');
       await loadCourses();
     }
   } catch (e) {
