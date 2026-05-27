@@ -628,7 +628,7 @@ class CPCScraper:
             day_type = "日間班"
 
         nm = name + subtitle
-        if "回訓" in nm or "在職" in nm:
+        if "回訓" in nm or "在職" in nm or "複訓" in nm:
             category = "複訓"
         elif "初訓" in nm:
             category = "初訓"
@@ -1524,56 +1524,36 @@ def api_email():
         '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;border:1px solid #888;margin:10px 0;">',
     ]
     
-    if mode == "external":
-        # 給同仁版: 場次/主辦/日期/上課時間/上課地點/費用
-        html_parts.extend([
-            '<tr style="background:#4472C4;color:white;font-weight:bold;">',
-            '<td style="border:1px solid #BBB;">場次</td>',
-            '<td style="border:1px solid #BBB;">主辦單位</td>',
-            '<td style="border:1px solid #BBB;">日期</td>',
-            '<td style="border:1px solid #BBB;">上課時間</td>',
-            '<td style="border:1px solid #BBB;">上課地點</td>',
-            '<td style="border:1px solid #BBB;">費用</td></tr>',
-        ])
-        for i, c in enumerate(selected, 1):
-            html_parts.append(
-                f'<tr><td style="text-align:center;border:1px solid #BBB;"><b>{i}</b></td>'
-                f'<td style="border:1px solid #BBB;">{c.get("institute","")} ({c.get("branch","")})</td>'
-                f'<td style="border:1px solid #BBB;">{_format_date_range(c)}</td>'
-                f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
-                f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
-                f'<td style="text-align:right;border:1px solid #BBB;">{c.get("fee","")} 元</td></tr>'
-            )
-    else:
-        # 後台版: 完整資訊 + 報名連結
-        html_parts.extend([
-            '<tr style="background:#C00000;color:white;font-weight:bold;">',
-            '<td style="border:1px solid #BBB;">場次</td>',
-            '<td style="border:1px solid #BBB;">主辦單位</td>',
-            '<td style="border:1px solid #BBB;">日期</td>',
-            '<td style="border:1px solid #BBB;">上課時間</td>',
-            '<td style="border:1px solid #BBB;">上課地點</td>',
-            '<td style="border:1px solid #BBB;">班別</td>',
-            '<td style="border:1px solid #BBB;">時數</td>',
-            '<td style="border:1px solid #BBB;">費用</td>',
-            '<td style="border:1px solid #BBB;">狀態</td>',
-            '<td style="border:1px solid #BBB;">報名連結</td></tr>',
-        ])
-        for i, c in enumerate(selected, 1):
-            reg_link = c.get("register_url", "")
-            link_html = f'<a href="{reg_link}" target="_blank">點此報名</a>' if reg_link else "(無連結)"
-            html_parts.append(
-                f'<tr><td style="text-align:center;border:1px solid #BBB;"><b>{i}</b></td>'
-                f'<td style="border:1px solid #BBB;">{c.get("institute","")} ({c.get("branch","")})</td>'
-                f'<td style="border:1px solid #BBB;">{c.get("start_date","")}</td>'
-                f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
-                f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
-                f'<td style="text-align:center;border:1px solid #BBB;">{c.get("class_type","")}</td>'
-                f'<td style="text-align:center;border:1px solid #BBB;">{c.get("hours","")} 小時</td>'
-                f'<td style="text-align:right;border:1px solid #BBB;">{c.get("fee","")} 元</td>'
-                f'<td style="text-align:center;border:1px solid #BBB;">{c.get("status","")}</td>'
-                f'<td style="border:1px solid #BBB;">{link_html}</td></tr>'
-            )
+    # 合併版:不分同仁/後台,一張完整表;按開課日升冪排序(近的在前)
+    selected_sorted = sorted(selected, key=lambda c: c.get("start_date", "") or "9999-99-99")
+    html_parts.extend([
+        '<tr style="background:#4472C4;color:white;font-weight:bold;">',
+        '<td style="border:1px solid #BBB;">場次</td>',
+        '<td style="border:1px solid #BBB;">主辦單位</td>',
+        '<td style="border:1px solid #BBB;">日期</td>',
+        '<td style="border:1px solid #BBB;">上課時間</td>',
+        '<td style="border:1px solid #BBB;">上課地點</td>',
+        '<td style="border:1px solid #BBB;">班別</td>',
+        '<td style="border:1px solid #BBB;">時數</td>',
+        '<td style="border:1px solid #BBB;">費用</td>',
+        '<td style="border:1px solid #BBB;">狀態</td>',
+        '<td style="border:1px solid #BBB;">報名連結</td></tr>',
+    ])
+    for i, c in enumerate(selected_sorted, 1):
+        reg_link = c.get("register_url", "")
+        link_html = f'<a href="{reg_link}" target="_blank">點此報名</a>' if reg_link else "(無連結)"
+        html_parts.append(
+            f'<tr><td style="text-align:center;border:1px solid #BBB;"><b>{i}</b></td>'
+            f'<td style="border:1px solid #BBB;">{c.get("institute","")} ({c.get("branch","")})</td>'
+            f'<td style="border:1px solid #BBB;">{_format_date_range(c)}</td>'
+            f'<td style="border:1px solid #BBB;">{c.get("class_time","")}</td>'
+            f'<td style="border:1px solid #BBB;">{c.get("location","")}</td>'
+            f'<td style="text-align:center;border:1px solid #BBB;">{c.get("class_type","")}</td>'
+            f'<td style="text-align:center;border:1px solid #BBB;">{c.get("hours","")} 小時</td>'
+            f'<td style="text-align:right;border:1px solid #BBB;">{c.get("fee","")} 元</td>'
+            f'<td style="text-align:center;border:1px solid #BBB;">{c.get("status","")}</td>'
+            f'<td style="border:1px solid #BBB;">{link_html}</td></tr>'
+        )
     
     html_parts.extend(['</table>', '<p>敬請回覆,謝謝!</p>', '</div>'])
     return jsonify({"subject": subject, "html": "".join(html_parts)})
