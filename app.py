@@ -1490,7 +1490,9 @@ def update_courses(codes, force_refresh=False):
 # Flask App
 # ==========================================================================
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)
+# Commit 18e (緊急修復):固定 secret_key,避免 worker 重啟導致使用者被自動登出
+# 優先讀環境變數 SECRET_KEY (建議到 Render 設),沒設就用內建備用值
+app.secret_key = os.environ.get("SECRET_KEY", "training-tool-fixed-key-2026-jentechhr1-please-rotate-yearly")
 
 
 def login_required(f):
