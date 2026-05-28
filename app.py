@@ -390,7 +390,7 @@ class TichaScraper:
                 course["location"] = BRANCH_ADDRESSES.get(course["branch"], f"{course['branch']} (詳洽協會)")
             return course
 
-        with ThreadPoolExecutor(max_workers=12) as pool:
+        with ThreadPoolExecutor(max_workers=6) as pool:
             for i, _ in enumerate(pool.map(_grab, targets_to_fetch)):
                 cls._progress["current"] = i + 1
                 cls._progress["message"] = f"Ticsha 抓詳細地址 ({i+1}/{len(targets_to_fetch)})"
@@ -802,7 +802,7 @@ class CPCScraper:
                 print(f"  [CPC] page {cat_id}/{p} 失敗: {e}")
                 return []
 
-        with ThreadPoolExecutor(max_workers=8) as pool:
+        with ThreadPoolExecutor(max_workers=6) as pool:
             for idx, page_rows in enumerate(pool.map(grab_page, page_jobs)):
                 cls._progress["current"] = idx + 1
                 cls._progress["message"] = f"CPC 掃描列表 {idx+1}/{len(page_jobs)}..."
@@ -848,7 +848,7 @@ class CPCScraper:
                     print(f"  [CPC] detail {course['code']} 失敗: {e}")
                 return course
 
-            with ThreadPoolExecutor(max_workers=12) as pool:
+            with ThreadPoolExecutor(max_workers=6) as pool:
                 for idx, _ in enumerate(pool.map(grab_detail, targets_to_fetch)):
                     cls._progress["current"] = idx + 1
                     cls._progress["message"] = f"抓 CPC 詳細 {idx+1}/{len(targets_to_fetch)}..."
@@ -1363,7 +1363,7 @@ class ISHAScraper:
                 cls._fetch_detail(session, c)
                 return c
 
-            with ThreadPoolExecutor(max_workers=24) as pool:
+            with ThreadPoolExecutor(max_workers=6) as pool:
                 for idx, _ in enumerate(pool.map(_isha_do, targets_to_fetch)):
                     cls._progress["current"] = idx + 1
                     cls._progress["message"] = f"ISHA 抓詳細 {idx+1}/{len(targets_to_fetch)}..."
