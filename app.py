@@ -1825,6 +1825,100 @@ def api_email():
 
 
 # ==========================================================================
+# 後台管理頁
+# ==========================================================================
+ADMIN_TEMPLATE = r"""<!DOCTYPE html>
+<html lang="zh-TW"><head><meta charset="UTF-8"><title>後台管理</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Microsoft JhengHei', sans-serif; background: #F0F8FF; min-height: 100vh; }
+.header { background: linear-gradient(135deg, #A8D8EA, #B5EAD7); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 18px; font-weight: 700; color: #2C3E50; }
+.back-btn { background: white; border: none; color: #3F72AF; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; }
+.container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+.card { background: white; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(160,180,200,0.12); }
+.card h2 { font-size: 15px; font-weight: 700; color: #3F72AF; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #E5EEF4; }
+.user-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #F0F0F0; flex-wrap: wrap; }
+.user-row:last-child { border-bottom: none; }
+.user-label { font-weight: 600; font-size: 14px; min-width: 80px; }
+.user-role { font-size: 11px; background: #E5EEF4; color: #3F72AF; padding: 2px 8px; border-radius: 10px; }
+input[type=text], input[type=password] { padding: 8px 12px; border: 2px solid #DBE9EE; border-radius: 8px; font-family: inherit; font-size: 14px; width: 160px; }
+input:focus { outline: none; border-color: #4FB3BF; }
+.btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; }
+.btn-blue { background: #3F72AF; color: white; }
+.btn-blue:hover { background: #2C5F9E; }
+.msg { font-size: 12px; margin-left: 8px; }
+.msg.ok { color: #2E7D32; }
+.msg.err { color: #C44569; }
+</style></head>
+<body>
+<div class="header">
+  <h1>⚙️ 後台管理</h1>
+  <button class="back-btn" onclick="location.href='/'">← 返回主頁</button>
+</div>
+<div class="container">
+  <div class="card">
+    <h2>👥 使用者管理</h2>
+    <div id="userList">載入中...</div>
+  </div>
+</div>
+<script>
+async function loadUsers() {
+  const r = await fetch('/api/admin/list_users');
+  const d = await r.json();
+  if (!d.ok) { document.getElementById('userList').textContent = '載入失敗'; return; }
+  document.getElementById('userList').innerHTML = d.users.map(u => `
+    <div class="user-row">
+      <div class="user-label">${u.display_name}</div>
+      <div class="user-role">${u.role === 'admin' ? '管理員' : '使用者'}</div>
+      <div style="color:#888;font-size:12px;">@${u.username}</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;">
+        <input type="text" id="name_${u.username}" placeholder="新顯示名稱" value="${u.display_name}">
+        <button class="btn btn-blue" onclick="changeName('${u.username}')">改名稱</button>
+        <span class="msg" id="nameMsg_${u.username}"></span>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <input type="password" id="pw_${u.username}" placeholder="新密碼">
+        <button class="btn btn-blue" onclick="changePw('${u.username}')">改密碼</button>
+        <span class="msg" id="pwMsg_${u.username}"></span>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function changePw(username) {
+  const pw = document.getElementById('pw_' + username).value.trim();
+  const msg = document.getElementById('pwMsg_' + username);
+  if (!pw) { msg.textContent = '請輸入新密碼'; msg.className = 'msg err'; return; }
+  const r = await fetch('/api/admin/change_password', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username, new_password: pw})
+  });
+  const d = await r.json();
+  msg.textContent = d.ok ? '✓ 已更新' : ('✗ ' + d.error);
+  msg.className = 'msg ' + (d.ok ? 'ok' : 'err');
+  if (d.ok) document.getElementById('pw_' + username).value = '';
+}
+
+async function changeName(username) {
+  const name = document.getElementById('name_' + username).value.trim();
+  const msg = document.getElementById('nameMsg_' + username);
+  if (!name) { msg.textContent = '請輸入名稱'; msg.className = 'msg err'; return; }
+  const r = await fetch('/api/admin/change_display_name', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username, display_name: name})
+  });
+  const d = await r.json();
+  msg.textContent = d.ok ? '✓ 已更新' : ('✗ ' + d.error);
+  msg.className = 'msg ' + (d.ok ? 'ok' : 'err');
+}
+
+loadUsers();
+</script>
+</body></html>
+"""
+
+# ==========================================================================
 # 登入頁
 # ==========================================================================
 LOGIN_TEMPLATE = r"""<!DOCTYPE html>
