@@ -347,9 +347,12 @@ class TichaScraper:
             except Exception as e:
                 print(f"    ✗ 失敗: {e}")
 
-        # === Commit 18d: 啟用 detail 抓取(學科 / 術科地址)===
-        cls._fetch_all_details(all_courses)
-        # ====================================================
+        # === Commit 18f: 緊急回滾 — Ticsha 改回不抓 detail(回到 BRANCH_ADDRESSES 模式)===
+        # 原因:Ticsha 並行抓 564 個 detail 讓 Render Free 0.1 CPU 撐不住,worker OOM/timeout
+        # Ticsha 維持單一分會地址(犧牲學科/術科,但 Ticsha 課程大多沒有術科,影響小)
+        # 未來如果升級 Render Starter 或改用外部資料庫,可以把下面那行解除註解再啟用
+        # cls._fetch_all_details(all_courses)
+        # =====================================================================
 
         cls._progress = {"stage": "done", "current": 0, "total": 0, "message": "完成"}
         return all_courses
