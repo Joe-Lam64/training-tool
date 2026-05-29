@@ -2152,7 +2152,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </div>
         <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('isha');" title="只更新此協會,不影響其他">🔄 只更新</button>
       </label>
-      <button class="btn-primary" onclick="startUpdate()">🔄 立即更新</button>
+      <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;">
+        ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕<br>
+        <span style="font-size:11px;opacity:0.8;">（同時更新三個協會會造成系統記憶體不足）</span>
+      </div>
     </div>
     <div class="info-line" id="lastUpdate">尚未抓取</div>
     
