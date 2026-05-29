@@ -2659,7 +2659,7 @@ function renderTable() {
       <td>${escHtml(dateStr)}</td>
       <td>${classCell}</td>
       <td style="text-align:center;">${escHtml(hoursStr)}</td>
-      <td style="text-align:right;">${c.fee ? escHtml(c.fee) + ' 元' : '免費'}</td>
+      <td style="text-align:right;">${c.fee && c.fee !== '免費' ? escHtml(c.fee) : (c.fee === '免費' ? '免費' : (c.fee ? escHtml(c.fee) : '免費'))}</td>
       <td>${statBadge(c.status)}</td>
     </tr>`;
   }).join('');
@@ -2701,7 +2701,7 @@ function renderSelected() {
       <div class="info">
         <b>${i+1}. ${escHtml(c.name)}</b>
         <div class="meta">
-          📍 ${escHtml(c.branch)} ｜ ${escHtml(c.category)} ｜ ${escHtml(c.start_date)} ${escHtml(c.class_type)} ｜ ${escHtml(c.location)} ｜ ${escHtml(c.fee)}元
+          📍 ${escHtml(c.branch)} ｜ ${escHtml(c.category)} ｜ ${escHtml(c.start_date)} ${escHtml(c.class_type)} ｜ ${escHtml(c.location)} ｜ ${c.fee ? escHtml(c.fee) : '免費'}
         </div>
       </div>
       <button class="remove-btn" onclick="toggleSel('${escHtml(c.id)}')">✕ 移除</button>
