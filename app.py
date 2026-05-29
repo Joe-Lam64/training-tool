@@ -56,6 +56,10 @@ BRANCH_ADDRESSES = {
 ONLINE_USERS = {}  # {"username|ip": last_active_timestamp}
 ONLINE_LOCK = threading.Lock()
 
+# 強制登出黑名單 (username → 踢出時間戳，login_time 早於此的 session 視為無效)
+FORCE_LOGOUT = {}  # {"username": timestamp}
+FORCE_LOGOUT_LOCK = threading.Lock()
+
 
 def _make_key(username, ip):
     return f"{username}|{ip}"
@@ -1801,7 +1805,18 @@ def login_required(f):
                 return jsonify({"error": "未登入", "redirect": "/login"}), 401
             return redirect(url_for("login_page"))
         # 更新在線狀態 (用 username + IP 區分)
-        update_online(session["user"]["username"], request.remote_addr or "?")
+        uname = session["user"]["username"]
+        login_time = session["user"].get("login_time", 0)
+        # 檢查是否被強制登出
+        with FORCE_LOGOUT_LOCK:
+            kick_time = FORCE_LOGOUT.get(uname, 0)
+        if login_time < kick_time:
+            session.pop("user", None)
+            remove_online(uname, request.remote_addr or "?")
+            if request.path.startswith("/api/"):
+                return jsonify({"error": "已被登出", "redirect": "/login"}), 401
+            return redirect(url_for("login_page"))
+        update_online(uname, request.remote_addr or "?")
         return f(*args, **kwargs)
     return decorated
 
@@ -1982,6 +1997,9 @@ def api_delete_user():
             u, _ = key.split("|", 1) if "|" in key else (key, "?")
             if u == username:
                 del ONLINE_USERS[key]
+    # 加入黑名單，使該帳號現有 session 失效
+    with FORCE_LOGOUT_LOCK:
+        FORCE_LOGOUT[username] = time.time()
     return jsonify({"ok": True})
 
 
