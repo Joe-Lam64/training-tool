@@ -1545,10 +1545,17 @@ class CSHMScraper:
             soup = BeautifulSoup(r.text, "html.parser")
             text = soup.get_text(separator="\n", strip=True)
 
-            # 地址（地點）
-            m = re.search(r"地點\s*[：:]\s*([^\n]+)", text)
+            # 地址（地點）— 格式為「地點　桃園市...」（tab/空白分隔）
+            m = re.search(r"地點\s+([^\n\t]{5,60})", text)
+            if not m:
+                m = re.search(r"地點\s*[：:]\s*([^\n]+)", text)
             if m:
-                course["location"] = m.group(1).strip()
+                addr = m.group(1).strip()
+                # 過濾掉「時段」等非地址內容
+                if any(kw in addr for kw in ("時段", "時數", "費用", "地區")):
+                    addr = ""
+                if addr:
+                    course["location"] = addr
 
             # 時數
             if not course.get("hours"):
@@ -1556,9 +1563,9 @@ class CSHMScraper:
                 if m:
                     course["hours"] = m.group(1)
 
-            # 費用
+            # 費用（支援「優惠價1300元」「定價:1500元」「費用：1300」等格式）
             if not course.get("fee"):
-                m = re.search(r"費用\s*[：:]?\s*(\d[\d,]*)", text)
+                m = re.search(r"(?:優惠價|定價|費用)[：:\s]*(\d[\d,]*)\s*元?", text)
                 if m:
                     course["fee"] = m.group(1).replace(",", "")
 
@@ -2633,6 +2640,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <option value="台灣省工商安全衛生協會">台灣省工商安全衛生協會</option>
         <option value="中國生產力中心">中國生產力中心 (CPC)</option>
         <option value="中華民國工業安全衛生協會">中華民國工業安全衛生協會 (ISHA)</option>
+        <option value="中國勞工安全衛生管理學會">中國勞工安全衛生管理學會 (CSHM)</option>
       </select>
       <select id="filterBranch" onchange="renderTable()" style="display:none;"><option value="">全部分會</option></select>
       <div id="branchMultiBox" style="position:relative;">
