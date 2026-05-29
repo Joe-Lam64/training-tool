@@ -2272,6 +2272,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <span class="name">{{ user.display_name }}</span>
       <span class="role">{{ '管理員' if user.role == 'admin' else '使用者' }}</span>
     </div>
+    {% if user.role == 'admin' %}<button class="logout-btn" onclick="location.href='/admin'" style="background:#E7F3FF;">⚙️ 後台管理</button>{% endif %}
     <button class="logout-btn" onclick="logout()">登出</button>
   </div>
 </div>
