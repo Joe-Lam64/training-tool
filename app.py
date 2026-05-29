@@ -2253,7 +2253,13 @@ input:focus { outline: none; border-color: #4FB3BF; }
 </style></head>
 <body>
 <div class="header">
-  <h1>⚙️ 後台管理</h1>
+  <div style="display:flex;flex-direction:column;gap:4px;">
+    <div style="font-size:13px;color:#5B7080;display:flex;align-items:center;gap:6px;">
+      <a href="/" style="color:#3F72AF;font-weight:600;text-decoration:none;">📚 外訓課程整合管理系統</a>
+      <span style="color:#AAB8C2;">/</span>
+      <span style="color:#AAB8C2;font-weight:600;">⚙️ 後台管理</span>
+    </div>
+  </div>
   <button class="back-btn" onclick="location.href='/'">← 返回主頁</button>
 </div>
 <div class="container">
