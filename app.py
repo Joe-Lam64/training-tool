@@ -60,6 +60,11 @@ ONLINE_LOCK = threading.Lock()
 FORCE_LOGOUT = {}  # {"username": timestamp}
 FORCE_LOGOUT_LOCK = threading.Lock()
 
+# 全域更新鎖 (防止多人同時更新)
+IS_UPDATING = False
+IS_UPDATING_BY = ""  # 記錄是誰在更新
+IS_UPDATING_LOCK = threading.Lock()
+
 
 def _make_key(username, ip):
     return f"{username}|{ip}"
@@ -2045,11 +2050,22 @@ def api_update_progress():
 @app.route("/api/update", methods=["POST"])
 @login_required
 def api_update():
-    body = request.get_json() or {}
-    codes = body.get("scrapers", ["ticsha"])
-    force_refresh = bool(body.get("force_refresh", False))
-    data = update_courses(codes, force_refresh=force_refresh)
-    return jsonify({"ok": True, "count": len(data["courses"]), "last_updated": data["last_updated"]})
+    global IS_UPDATING, IS_UPDATING_BY
+    with IS_UPDATING_LOCK:
+        if IS_UPDATING:
+            return jsonify({"ok": False, "error": f"目前 {IS_UPDATING_BY} 正在更新資料，請稍後再試"}), 423
+        IS_UPDATING = True
+        IS_UPDATING_BY = session["user"]["display_name"]
+    try:
+        body = request.get_json() or {}
+        codes = body.get("scrapers", ["ticsha"])
+        force_refresh = bool(body.get("force_refresh", False))
+        data = update_courses(codes, force_refresh=force_refresh)
+        return jsonify({"ok": True, "count": len(data["courses"]), "last_updated": data["last_updated"]})
+    finally:
+        with IS_UPDATING_LOCK:
+            IS_UPDATING = False
+            IS_UPDATING_BY = ""
 
 
 def _format_date_with_weekday(date_str):
