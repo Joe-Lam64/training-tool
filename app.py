@@ -3058,7 +3058,7 @@ function renderTable() {
       <td>${escHtml(dateStr)}</td>
       <td>${classCell}</td>
       <td style="text-align:center;">${escHtml(hoursStr)}</td>
-      <td style="text-align:right;">${c.fee ? escHtml(c.fee) + ' 元' : '免費'}</td>
+      <td style="text-align:right;">${c.fee ? (String(c.fee).endsWith('元') ? escHtml(c.fee) : escHtml(c.fee) + ' 元') : '免費'}</td>
       <td>${statBadge(c.status)}</td>
     </tr>`;
   }).join('');
