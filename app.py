@@ -2516,17 +2516,17 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .header-left .sub { font-size: 12px; opacity: 0.75; margin-top: 2px; }
   .header-right { display: flex; align-items: center; gap: 14px; }
   .header-stat {
-    background: rgba(255,255,255,0.6); padding: 6px 12px; border-radius: 8px;
-    font-size: 12px; color: var(--ink);
+    background: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px;
+    font-size: 14px; color: var(--ink);
     display: flex; align-items: center; gap: 6px;
   }
-  .header-stat strong { color: var(--blue); font-weight: 700; }
-  .user-info { font-size: 13px; background: rgba(255,255,255,0.6); padding: 6px 12px; border-radius: 8px; }
+  .header-stat strong { color: var(--blue); font-weight: 700; font-size: 16px; }
+  .user-info { font-size: 15px; background: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px; }
   .user-info .name { font-weight: 700; color: var(--blue); }
-  .user-info .role { background: var(--blue); color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 6px; }
+  .user-info .role { background: var(--blue); color: white; padding: 3px 10px; border-radius: 10px; font-size: 13px; margin-left: 6px; }
   .logout-btn {
-    background: white; border: none; color: var(--blue); padding: 8px 16px;
-    font-family: inherit; font-size: 13px; border-radius: 8px; cursor: pointer;
+    background: white; border: none; color: var(--blue); padding: 10px 20px;
+    font-family: inherit; font-size: 15px; border-radius: 8px; cursor: pointer;
     font-weight: 600; transition: all 0.15s;
   }
   .logout-btn:hover { background: var(--lavender); }
