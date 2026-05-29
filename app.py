@@ -2127,7 +2127,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <!-- ① 抓取課程 -->
   <div class="card">
     <h2>① 抓取課程資料</h2>
-    <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+    <div style="display:flex; gap:14px; align-items:stretch; flex-wrap:wrap;">
       <label class="inst-card checked" id="instTicsha" onclick="toggleInst('ticsha')">
         <input type="checkbox" id="instCheckTicsha" checked>
         <div style="flex:1;">
@@ -2152,9 +2152,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </div>
         <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('isha');" title="只更新此協會,不影響其他">🔄 只更新</button>
       </label>
-      <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;">
+      <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;align-self:center;white-space:nowrap;">
         ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕<br>
-        <span style="font-size:11px;opacity:0.8;">（同時更新三個協會會造成系統記憶體不足）</span>
+        <span style="font-size:11px;opacity:0.8;">（同時更新多個協會會造成系統記憶體不足）</span>
       </div>
     </div>
     <div class="info-line" id="lastUpdate">尚未抓取</div>
@@ -2599,7 +2599,7 @@ function renderTable() {
       <td>${escHtml(dateStr)}</td>
       <td>${classCell}</td>
       <td style="text-align:center;">${escHtml(hoursStr)}</td>
-      <td style="text-align:right;">${escHtml(c.fee)}</td>
+      <td style="text-align:right;">${c.fee ? escHtml(c.fee) + ' 元' : '免費'}</td>
       <td>${statBadge(c.status)}</td>
     </tr>`;
   }).join('');
