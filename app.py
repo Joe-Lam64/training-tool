@@ -1582,6 +1582,66 @@ def api_online():
     return jsonify({"users": get_online_users(), "count": len(get_online_users())})
 
 
+@app.route("/admin")
+@login_required
+def admin_page():
+    if session["user"]["role"] != "admin":
+        return redirect(url_for("index"))
+    return render_template_string(ADMIN_TEMPLATE, user=session["user"])
+
+
+@app.route("/api/admin/change_password", methods=["POST"])
+@login_required
+def api_change_password():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    body = request.get_json() or {}
+    target = body.get("username", "").strip()
+    new_pw = body.get("new_password", "").strip()
+    if not target or not new_pw:
+        return jsonify({"ok": False, "error": "請填寫完整"})
+    if len(new_pw) < 4:
+        return jsonify({"ok": False, "error": "密碼至少 4 個字元"})
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET password=? WHERE username=?", (new_pw, target))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/change_display_name", methods=["POST"])
+@login_required
+def api_change_display_name():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    body = request.get_json() or {}
+    target = body.get("username", "").strip()
+    new_name = body.get("display_name", "").strip()
+    if not target or not new_name:
+        return jsonify({"ok": False, "error": "請填寫完整"})
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET display_name=? WHERE username=?", (new_name, target))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/list_users")
+@login_required
+def api_list_users():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT username, role, display_name FROM users ORDER BY id")
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return jsonify({"ok": True, "users": rows})
+
+
 @app.route("/api/fetch_location", methods=["POST"])
 @login_required
 def api_fetch_location():
