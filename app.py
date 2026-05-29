@@ -2169,16 +2169,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           </div>
           <div class="toggle-switch" id="autoUpdateToggle" onclick="alert('自動更新功能將於下版開放\\n屆時可設定每天 / 每週的自動抓取時間')"></div>
         </div>
-        <div class="setting-row">
-          <div>
-            <div style="font-weight:600;">⚡ 強制全抓 (忽略 cache)</div>
-            <div class="info-line">懷疑協會偷改地址、或第一次跑時用。會比「立即更新」慢一些,平常不需要按。</div>
-          </div>
-          <button type="button" onclick="if(confirm('確定要強制全抓嗎?\n\n所有協會的詳細頁都會重抓,時間約 8-10 分鐘。\n平常請用上方「立即更新」即可。')) startUpdate(true);"
-                  style="background:linear-gradient(135deg,#FFB6B9,#FAE3D9);color:#B73E3E;border:none;padding:10px 18px;border-radius:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">
-            ⚡ 強制全抓
-          </button>
-        </div>
+
       </div>
     </details>
   </div>
