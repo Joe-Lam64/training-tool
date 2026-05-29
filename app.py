@@ -2577,7 +2577,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <!-- ① 抓取課程 -->
   <div class="card">
     <h2>① 抓取課程資料</h2>
-    <div style="display:flex; gap:14px; align-items:stretch; flex-wrap:wrap;">
+    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:14px;">
       <label class="inst-card checked" id="instTicsha" onclick="toggleInst('ticsha')">
         <input type="checkbox" id="instCheckTicsha" checked>
         <div style="flex:1;">
@@ -2610,10 +2610,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </div>
         <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('cshm');" title="只更新此協會,不影響其他">🔄 只更新</button>
       </label>
-      <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;align-self:center;max-width:380px;">
-        ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕<br>
-        <span style="font-size:11px;opacity:0.8;">（同時更新多個協會會造成系統記憶體不足）</span>
       </div>
+    <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;margin-top:12px;">
+      ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕
+      <span style="font-size:11px;opacity:0.8;margin-left:8px;">（同時更新多個協會會造成系統記憶體不足）</span>
     </div>
     <div class="info-line" id="lastUpdate">尚未抓取</div>
     
