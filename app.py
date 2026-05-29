@@ -1366,7 +1366,7 @@ class ISHAScraper:
                 cls._fetch_detail(session, c)
                 return c
 
-            with ThreadPoolExecutor(max_workers=6) as pool:
+            with ThreadPoolExecutor(max_workers=2) as pool:
                 for idx, _ in enumerate(pool.map(_isha_do, targets_to_fetch)):
                     cls._progress["current"] = idx + 1
                     cls._progress["message"] = f"ISHA 抓詳細 {idx+1}/{len(targets_to_fetch)}..."
