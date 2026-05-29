@@ -2223,16 +2223,16 @@ ADMIN_TEMPLATE = r"""<!DOCTYPE html>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Microsoft JhengHei', sans-serif; background: #F0F8FF; min-height: 100vh; }
-.header { background: linear-gradient(135deg, #A8D8EA, #B5EAD7); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 18px; font-weight: 700; color: #2C3E50; }
-.back-btn { background: white; border: none; color: #3F72AF; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; }
+.header { background: linear-gradient(135deg, #A8D8EA, #B5EAD7); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 20px; font-weight: 700; color: #2C3E50; }
+.back-btn { background: white; border: none; color: #3F72AF; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600; }
 .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
 .card { background: white; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(160,180,200,0.12); }
-.card h2 { font-size: 15px; font-weight: 700; color: #3F72AF; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #E5EEF4; }
-.user-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #F0F0F0; flex-wrap: wrap; }
+.card h2 { font-size: 17px; font-weight: 700; color: #3F72AF; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #E5EEF4; }
+.user-row { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid #F0F0F0; flex-wrap: wrap; }
 .user-row:last-child { border-bottom: none; }
-.user-label { font-weight: 600; font-size: 14px; min-width: 80px; }
-.user-role { font-size: 11px; background: #E5EEF4; color: #3F72AF; padding: 2px 8px; border-radius: 10px; }
+.user-label { font-weight: 600; font-size: 16px; min-width: 90px; }
+.user-role { font-size: 13px; background: #E5EEF4; color: #3F72AF; padding: 3px 10px; border-radius: 10px; }
 .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; display: inline-block; margin-right: 4px; }
 .online-dot.on { background: #4CAF50; box-shadow: 0 0 4px #4CAF50; }
 input[type=text], input[type=password] { padding: 8px 12px; border: 2px solid #DBE9EE; border-radius: 8px; font-family: inherit; font-size: 14px; width: 150px; }
