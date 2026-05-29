@@ -29,6 +29,83 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from functools import wraps
 
+# === Supabase / PostgreSQL (commit 20a) ===
+try:
+    import psycopg2
+    import psycopg2.extras
+    SUPABASE_URL = os.environ.get("DATABASE_URL", "")
+    _PG_AVAILABLE = bool(SUPABASE_URL)
+except ImportError:
+    _PG_AVAILABLE = False
+    SUPABASE_URL = ""
+
+def _pg_conn():
+    """取得 PostgreSQL 連線，失敗回傳 None"""
+    if not _PG_AVAILABLE:
+        return None
+    try:
+        conn = psycopg2.connect(SUPABASE_URL, sslmode="require", connect_timeout=10)
+        return conn
+    except Exception as e:
+        print(f"[PG] 連線失敗: {e}")
+        return None
+
+def init_activity_log():
+    """建立 activity_log 表 (如果不存在)"""
+    conn = _pg_conn()
+    if not conn:
+        print("[PG] 無法建立 activity_log 表 (無連線)")
+        return
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS activity_log (
+                id SERIAL PRIMARY KEY,
+                username TEXT NOT NULL,
+                action TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                duration_seconds INTEGER,
+                scraper_code TEXT,
+                course_ids TEXT,
+                course_count INTEGER,
+                email_subject TEXT,
+                ip TEXT
+            )
+        """)
+        conn.commit()
+        print("[PG] activity_log 表已就緒")
+    except Exception as e:
+        print(f"[PG] 建立 activity_log 失敗: {e}")
+    finally:
+        conn.close()
+
+def log_activity(username, action, ip="", duration_seconds=None,
+                 scraper_code=None, course_ids=None, course_count=None, email_subject=None):
+    """寫入一筆活動記錄 (非同步，失敗不影響主程式)"""
+    def _write():
+        conn = _pg_conn()
+        if not conn:
+            return
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO activity_log
+                (username, action, timestamp, duration_seconds, scraper_code, course_ids, course_count, email_subject, ip)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                username, action,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                duration_seconds, scraper_code,
+                json.dumps(course_ids, ensure_ascii=False) if course_ids else None,
+                course_count, email_subject, ip
+            ))
+            conn.commit()
+        except Exception as e:
+            print(f"[PG] log_activity 失敗: {e}")
+        finally:
+            conn.close()
+    threading.Thread(target=_write, daemon=True).start()
+
 from flask import Flask, jsonify, request, render_template_string, session, redirect, url_for
 import requests
 from bs4 import BeautifulSoup
