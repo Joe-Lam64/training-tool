@@ -2659,7 +2659,7 @@ function renderTable() {
       <td>${escHtml(dateStr)}</td>
       <td>${classCell}</td>
       <td style="text-align:center;">${escHtml(hoursStr)}</td>
-      <td style="text-align:right;">${c.fee && c.fee !== '免費' ? escHtml(c.fee) : (c.fee === '免費' ? '免費' : (c.fee ? escHtml(c.fee) : '免費'))}</td>
+      <td style="text-align:right;">${c.fee ? escHtml(c.fee) : '免費'}</td>
       <td>${statBadge(c.status)}</td>
     </tr>`;
   }).join('');
