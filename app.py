@@ -3100,7 +3100,7 @@ function renderSelected() {
       <div class="info">
         <b>${i+1}. ${escHtml(c.name)}</b>
         <div class="meta">
-          📍 ${escHtml(c.branch)} ｜ ${escHtml(c.category)} ｜ ${escHtml(c.start_date)} ${escHtml(c.class_type)} ｜ ${escHtml(c.location)} ｜ ${c.fee ? escHtml(c.fee) : '免費'}
+          📍 ${escHtml(c.branch)} ｜ ${escHtml(c.category)} ｜ ${escHtml(c.start_date)} ${escHtml(c.class_type)} ｜ ${escHtml(c.location)} ｜ ${c.fee ? (String(c.fee).endsWith('元') ? escHtml(c.fee) : escHtml(c.fee) + ' 元') : '免費'}
         </div>
       </div>
       <button class="remove-btn" onclick="toggleSel('${escHtml(c.id)}')">✕ 移除</button>
