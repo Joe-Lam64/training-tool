@@ -1639,7 +1639,7 @@ def _format_fee(fee):
     """費用顯示:免費類 → 「免費」;空/0 → 「—」;數字 → 「XXX 元」"""
     s = str(fee or "").strip()
     if not s or s == "0":
-        return "—"
+        return "免費"
     if "免" in s:
         return "免費"
     if s.endswith("元"):
