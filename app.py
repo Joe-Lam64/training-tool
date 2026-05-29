@@ -1817,18 +1817,18 @@ def login_page():
         if not user:
             return render_template_string(LOGIN_TEMPLATE, error="帳號或密碼錯誤", show_force=False)
         
-        # 檢查該帳號是否已有人在線 (在不同 IP)
+        # 檢查該帳號是否已有人在線（任何 IP，包含同 IP 不同視窗）
         my_ip = request.remote_addr or "?"
         existing = []
         with ONLINE_LOCK:
             for key in list(ONLINE_USERS.keys()):
                 u, ip = key.split("|", 1) if "|" in key else (key, "?")
-                if u == username and ip != my_ip and ONLINE_USERS[key] > time.time() - 300:
+                if u == username and ONLINE_USERS[key] > time.time() - 300:
                     existing.append(ip)
-        
+
         if existing and not force:
-            return render_template_string(LOGIN_TEMPLATE, 
-                error=f"⚠️ 此帳號目前已有人從 {existing[0]} 登入。若要強制踢掉並使用本帳號,請按下方「強制登入」",
+            return render_template_string(LOGIN_TEMPLATE,
+                error=f"⚠️ 此帳號目前已有人登入（IP: {existing[0]}）。若要強制踢掉並使用本帳號,請按下方「強制登入」",
                 show_force=True, _username=username, _password=password)
         
         # 如果是強制登入,踢掉所有其他 IP 的這個帳號
@@ -1935,6 +1935,85 @@ def api_list_users():
     rows = [dict(r) for r in cur.fetchall()]
     conn.close()
     return jsonify({"ok": True, "users": rows})
+
+
+@app.route("/api/admin/add_user", methods=["POST"])
+@login_required
+def api_add_user():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    body = request.get_json() or {}
+    username = body.get("username", "").strip()
+    password = body.get("password", "").strip()
+    display_name = body.get("display_name", "").strip()
+    if not username or not password or not display_name:
+        return jsonify({"ok": False, "error": "請填寫完整"})
+    if len(password) < 4:
+        return jsonify({"ok": False, "error": "密碼至少 4 個字元"})
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cur = conn.cursor()
+        cur.execute("INSERT INTO users (username, password, role, display_name, created_at) VALUES (?, ?, 'user', ?, ?)",
+                    (username, password, display_name, datetime.now().isoformat()))
+        conn.commit()
+        conn.close()
+        return jsonify({"ok": True})
+    except sqlite3.IntegrityError:
+        return jsonify({"ok": False, "error": f"帳號 {username} 已存在"})
+
+
+@app.route("/api/admin/delete_user", methods=["POST"])
+@login_required
+def api_delete_user():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    body = request.get_json() or {}
+    username = body.get("username", "").strip()
+    if username == "train0":
+        return jsonify({"ok": False, "error": "不能刪除管理員帳號"})
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+    cur.execute("DELETE FROM users WHERE username=?", (username,))
+    conn.commit()
+    conn.close()
+    # 強制登出該使用者
+    with ONLINE_LOCK:
+        for key in list(ONLINE_USERS.keys()):
+            u, _ = key.split("|", 1) if "|" in key else (key, "?")
+            if u == username:
+                del ONLINE_USERS[key]
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/force_logout", methods=["POST"])
+@login_required
+def api_force_logout():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    body = request.get_json() or {}
+    username = body.get("username", "").strip()
+    with ONLINE_LOCK:
+        for key in list(ONLINE_USERS.keys()):
+            u, _ = key.split("|", 1) if "|" in key else (key, "?")
+            if u == username:
+                del ONLINE_USERS[key]
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/online_detail")
+@login_required
+def api_online_detail():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    with ONLINE_LOCK:
+        cutoff = time.time() - 300
+        result = []
+        for key, ts in ONLINE_USERS.items():
+            if ts > cutoff:
+                u, ip = key.split("|", 1) if "|" in key else (key, "?")
+                mins_ago = int((time.time() - ts) / 60)
+                result.append({"username": u, "ip": ip, "mins_ago": mins_ago})
+    return jsonify({"ok": True, "online": result})
 
 
 @app.route("/api/fetch_location", methods=["POST"])
@@ -2130,21 +2209,29 @@ body { font-family: 'Microsoft JhengHei', sans-serif; background: #F0F8FF; min-h
 .header { background: linear-gradient(135deg, #A8D8EA, #B5EAD7); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; }
 .header h1 { font-size: 18px; font-weight: 700; color: #2C3E50; }
 .back-btn { background: white; border: none; color: #3F72AF; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; }
-.container { max-width: 800px; margin: 30px auto; padding: 0 20px; }
+.container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
 .card { background: white; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(160,180,200,0.12); }
 .card h2 { font-size: 15px; font-weight: 700; color: #3F72AF; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #E5EEF4; }
-.user-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #F0F0F0; flex-wrap: wrap; }
+.user-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #F0F0F0; flex-wrap: wrap; }
 .user-row:last-child { border-bottom: none; }
 .user-label { font-weight: 600; font-size: 14px; min-width: 80px; }
 .user-role { font-size: 11px; background: #E5EEF4; color: #3F72AF; padding: 2px 8px; border-radius: 10px; }
-input[type=text], input[type=password] { padding: 8px 12px; border: 2px solid #DBE9EE; border-radius: 8px; font-family: inherit; font-size: 14px; width: 160px; }
+.online-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; display: inline-block; margin-right: 4px; }
+.online-dot.on { background: #4CAF50; box-shadow: 0 0 4px #4CAF50; }
+input[type=text], input[type=password] { padding: 8px 12px; border: 2px solid #DBE9EE; border-radius: 8px; font-family: inherit; font-size: 14px; width: 150px; }
 input:focus { outline: none; border-color: #4FB3BF; }
-.btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; }
+.btn { padding: 7px 14px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; }
 .btn-blue { background: #3F72AF; color: white; }
 .btn-blue:hover { background: #2C5F9E; }
-.msg { font-size: 12px; margin-left: 8px; }
+.btn-red { background: #FFE5E5; color: #C44569; border: 1.5px solid #FFB8B8; }
+.btn-red:hover { background: #C44569; color: white; }
+.btn-orange { background: #FFF3CD; color: #856404; border: 1.5px solid #F4B860; }
+.btn-orange:hover { background: #F4B860; color: white; }
+.msg { font-size: 12px; margin-left: 4px; }
 .msg.ok { color: #2E7D32; }
 .msg.err { color: #C44569; }
+.add-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 14px; background: #F8FBFD; border-radius: 10px; margin-top: 14px; }
+.add-form input { width: 130px; }
 </style></head>
 <body>
 <div class="header">
@@ -2152,18 +2239,76 @@ input:focus { outline: none; border-color: #4FB3BF; }
   <button class="back-btn" onclick="location.href='/'">← 返回主頁</button>
 </div>
 <div class="container">
+
+  <!-- 在線狀態 -->
+  <div class="card">
+    <h2>🟢 目前在線狀態 <span id="onlineRefreshBtn" onclick="loadOnline()" style="font-size:12px;font-weight:400;color:#888;cursor:pointer;margin-left:8px;">🔄 刷新</span></h2>
+    <div id="onlineList">載入中...</div>
+  </div>
+
+  <!-- 使用者管理 -->
   <div class="card">
     <h2>👥 使用者管理</h2>
     <div id="userList">載入中...</div>
+    <div class="add-form">
+      <strong style="font-size:13px;">➕ 新增使用者：</strong>
+      <input type="text" id="newUsername" placeholder="帳號 (例: train4)">
+      <input type="text" id="newDisplayName" placeholder="顯示名稱">
+      <input type="password" id="newPassword" placeholder="密碼">
+      <button class="btn btn-blue" onclick="addUser()">新增</button>
+      <span class="msg" id="addMsg"></span>
+    </div>
   </div>
+
 </div>
 <script>
+let onlineUsernames = new Set();
+
+async function loadOnline() {
+  const r = await fetch('/api/admin/online_detail');
+  const d = await r.json();
+  if (!d.ok) return;
+  onlineUsernames = new Set(d.online.map(o => o.username));
+  if (d.online.length === 0) {
+    document.getElementById('onlineList').innerHTML = '<div style="color:#999;padding:8px;">目前沒有在線使用者</div>';
+  } else {
+    document.getElementById('onlineList').innerHTML = d.online.map(o => `
+      <div class="user-row">
+        <span class="online-dot on"></span>
+        <div class="user-label">${o.username}</div>
+        <div style="color:#888;font-size:12px;">IP: ${o.ip} ｜ ${o.mins_ago === 0 ? '剛剛活躍' : o.mins_ago + ' 分鐘前'}</div>
+        <button class="btn btn-orange" style="margin-left:auto;" onclick="forceLogout('${o.username}')">⚡ 強制登出</button>
+        <span class="msg" id="logoutMsg_${o.username}"></span>
+      </div>
+    `).join('');
+  }
+  // 同步更新使用者列表的在線指示燈
+  document.querySelectorAll('.online-indicator').forEach(el => {
+    const u = el.dataset.username;
+    el.className = 'online-dot online-indicator' + (onlineUsernames.has(u) ? ' on' : '');
+  });
+}
+
+async function forceLogout(username) {
+  const msg = document.getElementById('logoutMsg_' + username);
+  const r = await fetch('/api/admin/force_logout', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username})
+  });
+  const d = await r.json();
+  if (d.ok) {
+    if (msg) { msg.textContent = '✓ 已登出'; msg.className = 'msg ok'; }
+    setTimeout(loadOnline, 1000);
+  }
+}
+
 async function loadUsers() {
   const r = await fetch('/api/admin/list_users');
   const d = await r.json();
   if (!d.ok) { document.getElementById('userList').textContent = '載入失敗'; return; }
   document.getElementById('userList').innerHTML = d.users.map(u => `
     <div class="user-row">
+      <span class="online-dot online-indicator" data-username="${u.username}"></span>
       <div class="user-label">${u.display_name}</div>
       <div class="user-role">${u.role === 'admin' ? '管理員' : '使用者'}</div>
       <div style="color:#888;font-size:12px;">@${u.username}</div>
@@ -2177,8 +2322,14 @@ async function loadUsers() {
         <button class="btn btn-blue" onclick="changePw('${u.username}')">改密碼</button>
         <span class="msg" id="pwMsg_${u.username}"></span>
       </div>
+      ${u.role !== 'admin' ? `<button class="btn btn-red" onclick="deleteUser('${u.username}', '${u.display_name}')">🗑 刪除</button>` : ''}
     </div>
   `).join('');
+  // 套用在線狀態
+  document.querySelectorAll('.online-indicator').forEach(el => {
+    const u = el.dataset.username;
+    el.className = 'online-dot online-indicator' + (onlineUsernames.has(u) ? ' on' : '');
+  });
 }
 
 async function changePw(username) {
@@ -2208,7 +2359,48 @@ async function changeName(username) {
   msg.className = 'msg ' + (d.ok ? 'ok' : 'err');
 }
 
+async function deleteUser(username, displayName) {
+  if (!confirm(`確定要刪除「${displayName}」(@${username}) 嗎？\n\n此操作無法復原。`)) return;
+  const r = await fetch('/api/admin/delete_user', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username})
+  });
+  const d = await r.json();
+  if (d.ok) {
+    alert('✓ 已刪除');
+    loadUsers();
+    loadOnline();
+  } else {
+    alert('✗ ' + d.error);
+  }
+}
+
+async function addUser() {
+  const username = document.getElementById('newUsername').value.trim();
+  const displayName = document.getElementById('newDisplayName').value.trim();
+  const password = document.getElementById('newPassword').value.trim();
+  const msg = document.getElementById('addMsg');
+  if (!username || !displayName || !password) {
+    msg.textContent = '請填寫完整'; msg.className = 'msg err'; return;
+  }
+  const r = await fetch('/api/admin/add_user', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username, display_name: displayName, password})
+  });
+  const d = await r.json();
+  msg.textContent = d.ok ? '✓ 已新增' : ('✗ ' + d.error);
+  msg.className = 'msg ' + (d.ok ? 'ok' : 'err');
+  if (d.ok) {
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newDisplayName').value = '';
+    document.getElementById('newPassword').value = '';
+    loadUsers();
+  }
+}
+
+loadOnline();
 loadUsers();
+setInterval(loadOnline, 30000);
 </script>
 </body></html>
 """
