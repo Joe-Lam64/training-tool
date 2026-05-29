@@ -1565,7 +1565,9 @@ class CSHMScraper:
 
             # 費用（支援「優惠價1300元」「定價:1500元」「費用：1300」等格式）
             if not course.get("fee"):
-                m = re.search(r"(?:優惠價|定價|費用)[：:\s]*(\d[\d,]*)\s*元?", text)
+                m = re.search(r"(?:優惠價?|定價|費用)[：:\s]*(\d[\d,]*)\s*元?", text)
+                if not m:
+                    m = re.search(r"費用\s*\n\s*(?:優惠)?(\d[\d,]*)", text)
                 if m:
                     course["fee"] = m.group(1).replace(",", "")
 
@@ -3056,7 +3058,7 @@ function renderTable() {
       <td>${escHtml(dateStr)}</td>
       <td>${classCell}</td>
       <td style="text-align:center;">${escHtml(hoursStr)}</td>
-      <td style="text-align:right;">${c.fee ? escHtml(c.fee) : '免費'}</td>
+      <td style="text-align:right;">${c.fee ? escHtml(c.fee) + ' 元' : '免費'}</td>
       <td>${statBadge(c.status)}</td>
     </tr>`;
   }).join('');
