@@ -1388,9 +1388,295 @@ class ISHAScraper:
         return filtered
 
 
+# =========================================================
+# 解析器 #4:中國勞工安全衛生管理學會 (CSHM)
+# =========================================================
+class CSHMScraper:
+    name = "中國勞工安全衛生管理學會"
+    code = "cshm"
+    base_url = "https://www.cshm.org.tw"
+    # 只抓台北/桃園/中壢三區
+    target_areas = {
+        "台北": "A01",
+        "桃園": "A03",
+        "中壢": "A04",
+    }
+
+    _progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+
+    @classmethod
+    def get_progress(cls):
+        return dict(cls._progress)
+
+    @classmethod
+    def _roc_to_west(cls, roc_str):
+        """民國年 '115年6月3日' → '2026-06-03'"""
+        m = re.search(r"(\d{2,3})年(\d{1,2})月(\d{1,2})日", roc_str)
+        if not m:
+            return ""
+        y, mo, d = m.groups()
+        return f"{int(y)+1911:04d}-{int(mo):02d}-{int(d):02d}"
+
+    @classmethod
+    def _parse_list_page(cls, html, branch):
+        """解析列表頁，回傳課程清單"""
+        soup = BeautifulSoup(html, "html.parser")
+        courses = []
+        seen = set()
+
+        for table in soup.find_all("table"):
+            for tr in table.find_all("tr"):
+                td_list = tr.find_all("td")
+                if not td_list:
+                    continue
+                full_text = " ".join(td.get_text(" ", strip=True) for td in td_list)
+                if not full_text.strip():
+                    continue
+
+                # 狀態
+                status = ""
+                for st in ("確定開課", "額滿候補", "預定開課", "請先報名"):
+                    if st in full_text:
+                        status = st
+                        break
+                if not status:
+                    continue
+
+                # 課程名稱（第二個 td 通常含名稱）
+                name = ""
+                for td in td_list:
+                    t = td.get_text(" ", strip=True)
+                    # 跳過純狀態文字
+                    if t in ("確定開課", "額滿候補", "預定開課", "請先報名"):
+                        continue
+                    if len(t) > 4 and "報名" not in t[:2] and "詳細" not in t[:2]:
+                        name = t
+                        # 去掉狀態字串
+                        for st in ("確定開課", "額滿候補", "預定開課", "請先報名"):
+                            name = name.replace(st, "").strip()
+                        break
+
+                if not name:
+                    continue
+
+                # 班別
+                class_type = "日間班"
+                for ct in ("日間", "夜間", "假日", "綜合", "電洽"):
+                    if f"【{ct}】" in full_text:
+                        if ct == "夜間":
+                            class_type = "夜間班"
+                        elif ct == "假日":
+                            class_type = "假日班"
+                        else:
+                            class_type = f"{ct}班"
+                        break
+
+                # 開課日（民國年）
+                start_date = ""
+                dm = re.search(r"(\d{2,3})年(\d{1,2})月(\d{1,2})日", full_text)
+                if dm:
+                    start_date = cls._roc_to_west(dm.group(0))
+
+                # 報名連結 + 詳細資料連結
+                register_url = ""
+                detail_url = ""
+                for a in tr.find_all("a", href=True):
+                    href = a["href"]
+                    if not href.startswith("http"):
+                        href = cls.base_url + href
+                    if "Regist/Regist" in href and not register_url:
+                        register_url = href
+                    if "BrochureInfo" in href and not detail_url:
+                        detail_url = href
+
+                if not register_url and not detail_url:
+                    continue
+
+                # ID 用報名連結末段數字
+                cid_m = re.search(r"/(\d+)$", register_url or detail_url)
+                cid = cid_m.group(1) if cid_m else re.sub(r"\W", "", name)[:20]
+                course_id = f"cshm-{branch}-{cid}"
+
+                if course_id in seen:
+                    continue
+                seen.add(course_id)
+
+                # category
+                if "回訓" in name or "在職" in name:
+                    category = "複訓"
+                elif "初訓" in name or any(k in name for k in ("作業主管", "操作人員", "管理師", "管理員", "業務主管")):
+                    category = "初訓"
+                else:
+                    category = ""
+
+                nationality = "本國籍"
+
+                courses.append({
+                    "id": course_id,
+                    "institute": cls.name,
+                    "branch": branch,
+                    "name": name,
+                    "category": category,
+                    "nationality": nationality,
+                    "start_date": start_date,
+                    "end_date": "",
+                    "class_type": class_type,
+                    "class_time": "",
+                    "hours": "",
+                    "fee": "",
+                    "status": status,
+                    "deadline": "",
+                    "register_url": register_url or detail_url,
+                    "detail_url": detail_url,
+                    "location": "",
+                    "source": "cshm",
+                })
+        return courses
+
+    @classmethod
+    def _fetch_detail(cls, session, course):
+        """抓詳細頁：地址、時數、費用、上課時間、日期"""
+        detail_url = course.get("detail_url", "")
+        if not detail_url:
+            return
+        try:
+            r = session.get(detail_url, timeout=20)
+            r.encoding = "utf-8"
+            soup = BeautifulSoup(r.text, "html.parser")
+            text = soup.get_text(separator="\n", strip=True)
+
+            # 地址（地點）
+            m = re.search(r"地點\s*[：:]\s*([^\n]+)", text)
+            if m:
+                course["location"] = m.group(1).strip()
+
+            # 時數
+            if not course.get("hours"):
+                m = re.search(r"時數\s*[：:]?\s*(\d+)", text)
+                if m:
+                    course["hours"] = m.group(1)
+
+            # 費用
+            if not course.get("fee"):
+                m = re.search(r"費用\s*[：:]?\s*(\d[\d,]*)", text)
+                if m:
+                    course["fee"] = m.group(1).replace(",", "")
+
+            # 上課時間（說明欄）
+            if not course.get("class_time"):
+                m = re.search(r"說明\s*[：:]\s*([^\n]+)", text)
+                if m:
+                    raw = m.group(1).strip()
+                    tm = re.search(r"(\d{4})-(\d{4})", raw)
+                    if tm:
+                        h1, h2 = int(tm.group(1)[:2]), int(tm.group(2)[:2])
+                        m1, m2 = int(tm.group(1)[2:]), int(tm.group(2)[2:])
+                        course["class_time"] = (
+                            f"{'上午' if h1 < 12 else '下午'} {h1}:{m1:02d} - "
+                            f"{'上午' if h2 < 12 else '下午'} {h2}:{m2:02d}"
+                        )
+
+            # 開課日（從詳細頁補）
+            if not course.get("start_date"):
+                dm = re.search(r"日期\s*[：:]\s*(\d{2,3})年(\d{1,2})月(\d{1,2})日", text)
+                if dm:
+                    course["start_date"] = cls._roc_to_west(dm.group(0).split("：")[-1].split(":")[-1])
+
+            # category fallback
+            if not course.get("category"):
+                m = re.search(r"時數\s*[：:]?\s*(\d+)", text)
+                if m:
+                    try:
+                        course["category"] = "初訓" if int(m.group(1)) >= 12 else "複訓"
+                    except Exception:
+                        course["category"] = "複訓"
+
+            # class_time fallback
+            if not course.get("class_time"):
+                ct = course.get("class_type", "")
+                if "夜" in ct:
+                    course["class_time"] = "晚上 18:30 - 21:30"
+                else:
+                    course["class_time"] = "上午 9:00 - 下午 17:00"
+
+        except Exception as e:
+            print(f"  [CSHM] detail 失敗 {detail_url}: {e}")
+
+    @classmethod
+    def scrape(cls, fetch_details=True):
+        from concurrent.futures import ThreadPoolExecutor
+        session = requests.Session()
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+            "Accept-Language": "zh-TW,zh;q=0.9",
+        })
+
+        cls._progress = {"stage": "list", "current": 0, "total": len(cls.target_areas), "message": "CSHM 載入列表..."}
+        all_courses = []
+        seen_ids = set()
+
+        for i, (branch, area_code) in enumerate(cls.target_areas.items()):
+            cls._progress["current"] = i + 1
+            cls._progress["message"] = f"CSHM 抓取 {branch} 列表..."
+            try:
+                url = f"{cls.base_url}/Training/AreaIndex/{area_code}"
+                r = session.get(url, timeout=20)
+                r.encoding = "utf-8"
+                courses = cls._parse_list_page(r.text, branch)
+                new = 0
+                for c in courses:
+                    if c["id"] not in seen_ids:
+                        seen_ids.add(c["id"])
+                        all_courses.append(c)
+                        new += 1
+                print(f"  [CSHM] {branch}: 找到 {new} 筆")
+            except Exception as e:
+                print(f"  [CSHM] {branch} 列表失敗: {e}")
+
+        print(f"  [CSHM] 列表抓完，共 {len(all_courses)} 筆")
+
+        if fetch_details and all_courses:
+            cache = getattr(cls, "_cache", {}) or {}
+            force_refresh = getattr(cls, "_force_refresh", False)
+            _cache_fields = ["location", "hours", "fee", "class_time", "start_date", "category"]
+
+            targets = []
+            cache_hit = 0
+            for course in all_courses:
+                cached = cache.get(course["id"])
+                if not force_refresh and cached and cached.get("location"):
+                    for f in _cache_fields:
+                        if cached.get(f):
+                            course[f] = cached[f]
+                    cache_hit += 1
+                else:
+                    targets.append(course)
+
+            print(f"  [CSHM] Cache hit: {cache_hit} 筆，需抓 detail: {len(targets)} 筆")
+            cls._progress = {"stage": "details", "current": 0, "total": len(targets), "message": f"CSHM 抓詳細 0/{len(targets)}..."}
+
+            def _do(c):
+                cls._fetch_detail(session, c)
+                return c
+
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                for idx, _ in enumerate(pool.map(_do, targets)):
+                    cls._progress["current"] = idx + 1
+                    cls._progress["message"] = f"CSHM 抓詳細 {idx+1}/{len(targets)}..."
+
+        # 移除 detail_url（不需要存入 JSON）
+        for c in all_courses:
+            c.pop("detail_url", None)
+
+        cls._progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+        print(f"  [CSHM] 完成，共 {len(all_courses)} 堂課")
+        return all_courses
+
+
 SCRAPERS = {    "ticsha": TichaScraper,
     "cpc": CPCScraper,
     "isha": ISHAScraper,
+    "cshm": CSHMScraper,
 }
 
 def load_data():
@@ -2307,6 +2593,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </div>
         <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('isha');" title="只更新此協會,不影響其他">🔄 只更新</button>
       </label>
+      <label class="inst-card checked" id="instCshm" onclick="toggleInst('cshm')">
+        <input type="checkbox" id="instCheckCshm" checked>
+        <div style="flex:1;">
+          <div class="label">中國勞工安全衛生管理學會 (CSHM)</div>
+          <div class="desc">台北 · 桃園 · 中壢 三個分會</div>
+        </div>
+        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('cshm');" title="只更新此協會,不影響其他">🔄 只更新</button>
+      </label>
       <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;align-self:center;max-width:380px;">
         ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕<br>
         <span style="font-size:11px;opacity:0.8;">（同時更新多個協會會造成系統記憶體不足）</span>
@@ -2577,7 +2871,7 @@ document.addEventListener('click', function(e) {
 
 // === Commit 15: 單獨更新某一個協會 (不影響其他) ===
 async function updateOnly(code) {
-  const labels = {ticsha: '台灣省工商安全衛生協會', cpc: '中國生產力中心', isha: '中華民國工業安全衛生協會'};
+  const labels = {ticsha: '台灣省工商安全衛生協會', cpc: '中國生產力中心', isha: '中華民國工業安全衛生協會', cshm: '中國勞工安全衛生管理學會'};
   const label = labels[code] || code;
   if (!confirm(`只更新「${label}」?\n\n其他協會的資料會保留不動。`)) return;
   showLoading(`正在抓取 ${label}...`);
