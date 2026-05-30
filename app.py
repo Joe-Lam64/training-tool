@@ -2592,7 +2592,7 @@ ADMIN_TEMPLATE = r"""<!DOCTYPE html>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #C8DFF5 0%, #B8D4EE 50%, #C5E0F0 100%); min-height: 100vh; background-attachment: fixed; }
 .header { background: linear-gradient(120deg, #1a5fa8 0%, #4AAEE0 100%); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 3px 12px rgba(26,95,168,0.25); }
-.header h1 { font-size: 22px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.header h1 { font-size: 22px; font-weight: 800; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.3); letter-spacing: 0.5px; }
 .back-btn { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; transition: all 0.2s; }
 .back-btn:hover { background: rgba(255,255,255,0.38); transform: translateY(-1px); }
 .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
@@ -2622,10 +2622,10 @@ input:focus { outline: none; border-color: #4FB3BF; }
 <body>
 <div class="header">
   <div style="display:flex;flex-direction:column;gap:4px;">
-    <div style="font-size:17px;color:#5B7080;display:flex;align-items:center;gap:8px;">
-      <a href="/" style="color:#3F72AF;font-weight:700;text-decoration:none;">📚 外訓課程整合管理系統</a>
-      <span style="color:#AAB8C2;">/</span>
-      <span style="color:#AAB8C2;font-weight:600;">⚙️ 後台管理</span>
+    <div style="font-size:17px;display:flex;align-items:center;gap:8px;">
+      <a href="/" style="color:rgba(255,255,255,0.85);font-weight:700;text-decoration:none;text-shadow:0 1px 3px rgba(0,0,0,0.2);">📚 外訓課程整合管理系統</a>
+      <span style="color:rgba(255,255,255,0.5);">/</span>
+      <span style="color:white;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.2);">⚙️ 後台管理</span>
     </div>
   </div>
   <button class="back-btn" onclick="location.href='/'">← 返回主頁</button>
@@ -3490,9 +3490,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </div>
   </div>
 
-  <div style="text-align:center;padding:20px;color:#999;font-size:11px;line-height:1.8;">
-    External Training Management System v7.0<br>
-    © 2026 Training Dept. ｜ System internal use only.
+  <div style="text-align:center;padding:24px;font-size:12px;line-height:1.8;">
+    <span style="color:rgba(44,82,130,0.6);font-weight:600;letter-spacing:0.5px;">External Training Management System v7.0</span><br>
+    <span style="color:rgba(44,82,130,0.45);">© 2026 Training Dept. ｜ System internal use only.</span>
   </div>
 
 </div>
