@@ -2604,8 +2604,12 @@ body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradien
 .user-role { font-size: 13px; background: #E5EEF4; color: #3F72AF; padding: 3px 10px; border-radius: 10px; }
 .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; display: inline-block; margin-right: 4px; }
 .online-dot.on { background: #4CAF50; box-shadow: 0 0 4px #4CAF50; }
-input[type=text], input[type=password] { padding: 8px 12px; border: 2px solid #DBE9EE; border-radius: 8px; font-family: inherit; font-size: 14px; width: 150px; }
-input:focus { outline: none; border-color: #4FB3BF; }
+input[type=text], input[type=password] { 
+  padding: 8px 14px; border: 1.5px solid rgba(74,144,217,0.3); 
+  border-radius: 20px; font-family: inherit; font-size: 14px; width: 150px;
+  background: white; color: #1A202C; transition: all 0.2s;
+}
+input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(74,144,217,0.15); }
 .btn { padding: 7px 14px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; }
 .btn-blue { background: #3F72AF; color: white; }
 .btn-blue:hover { background: #2C5F9E; }
@@ -3076,19 +3080,21 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Buttons === */
   button.btn-primary {
-    background: linear-gradient(135deg, var(--blue), var(--teal));
-    color: white; border: none; padding: 12px 24px;
+    background: linear-gradient(135deg, #2980d4, #4AAEE0);
+    color: white; border: none; padding: 12px 28px;
     font-family: inherit; font-size: 14px; font-weight: 700;
-    border-radius: 10px; cursor: pointer; transition: all 0.15s;
-    box-shadow: 0 3px 10px rgba(63,114,175,0.3);
+    border-radius: 20px; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(41,128,212,0.35);
   }
-  button.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(63,114,175,0.4); }
+  button.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(41,128,212,0.45); }
   button.btn-secondary {
-    background: white; color: var(--blue); border: 2px solid var(--sky);
-    padding: 10px 20px; font-family: inherit; font-size: 13px; font-weight: 700;
-    border-radius: 10px; cursor: pointer; transition: all 0.15s;
+    background: white; color: #2980d4; 
+    border: 1.5px solid rgba(74,144,217,0.4);
+    padding: 10px 22px; font-family: inherit; font-size: 13px; font-weight: 700;
+    border-radius: 20px; cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(74,144,217,0.1);
   }
-  button.btn-secondary:hover { background: var(--sky); }
+  button.btn-secondary:hover { background: #EBF8FF; border-color: #4A90D9; transform: translateY(-1px); }
   
   /* === Institute update button (commit 15: 單獨更新此協會) === */
   .inst-update-btn {
@@ -3200,10 +3206,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   td { padding: 10px 8px; border-bottom: 1px solid var(--line); }
   
   /* === Row selection (第 2 點 - 整列點擊) === */
-  tbody tr { cursor: pointer; transition: background 0.1s; }
-  tbody tr:hover { background: #F0F8FF; }
-  tbody tr.selected { background: linear-gradient(90deg, #FFF4E6, #FFE9C7); }
-  tbody tr.selected:hover { background: linear-gradient(90deg, #FFE9C7, #FFE0A8); }
+  tbody tr { cursor: pointer; transition: background 0.15s; }
+  tbody tr:nth-child(even) { background: rgba(74,144,217,0.04); }
+  tbody tr:hover { background: rgba(74,144,217,0.1); }
+  tbody tr.selected { background: linear-gradient(90deg, rgba(74,144,217,0.15), rgba(74,144,217,0.08)); }
+  tbody tr.selected:hover { background: linear-gradient(90deg, rgba(74,144,217,0.22), rgba(74,144,217,0.12)); }
   
   /* 大型勾選方塊 */
   .big-check {
