@@ -2978,16 +2978,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --sky: #D6E4E8;       /* 低飽和灰藍 */
-    --mint: #D4E8DF;      /* 低飽和灰綠 */
-    --lavender: #E0DCF0;  /* 低飽和灰紫 */
-    --blue: #4A6FA5;      /* 柔和藍 */
-    --teal: #5A9E8F;      /* 柔和青綠 */
-    --warm: #F7F5F0;      /* 暖米白背景 */
-    --paper: #F5F5F0;     /* 主背景暖米白 */
-    --ink: #333333;       /* 深灰文字(非純黑) */
-    --ink-soft: #666666;  /* 中灰輔助文字 */
-    --line: #E8E8E4;      /* 暖灰分隔線 */
+    --sky: #B8D4DC;       /* 加深灰藍 */
+    --mint: #B8D8CC;      /* 加深灰綠 */
+    --lavender: #C8C4E0;  /* 加深灰紫 */
+    --blue: #2C5282;      /* 加深藍 */
+    --teal: #2E7D6E;      /* 加深青綠 */
+    --warm: #F0EDE8;      /* 暖米白背景 */
+    --paper: #EEECEA;     /* 主背景暖米白 */
+    --ink: #1A1A1A;       /* 深灰文字 */
+    --ink-soft: #4A4A4A;  /* 中灰輔助文字 */
+    --line: #D0CEC8;      /* 暖灰分隔線 */
   }
   body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
   
