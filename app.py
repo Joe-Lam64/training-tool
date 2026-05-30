@@ -3336,6 +3336,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <option value="中國生產力中心">中國生產力中心 (CPC)</option>
         <option value="中華民國工業安全衛生協會">中華民國工業安全衛生協會 (ISHA)</option>
         <option value="中國勞工安全衛生管理學會">中國勞工安全衛生管理學會 (CSHM)</option>
+        <option value="台灣能量輻射防護偵測有限公司">台灣能量輻射防護偵測有限公司 (TETE)</option>
       </select>
       <select id="filterBranch" onchange="renderTable()" style="display:none;"><option value="">全部分會</option></select>
       <div id="branchMultiBox" style="position:relative;">
