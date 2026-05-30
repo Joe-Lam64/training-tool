@@ -3243,8 +3243,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   tbody tr { cursor: pointer; transition: background 0.15s; }
   tbody tr:nth-child(even) { background: rgba(74,144,217,0.04); }
   tbody tr:hover { background: rgba(74,144,217,0.1); }
-  tbody tr.selected { background: linear-gradient(90deg, rgba(74,144,217,0.15), rgba(74,144,217,0.08)); }
-  tbody tr.selected:hover { background: linear-gradient(90deg, rgba(74,144,217,0.22), rgba(74,144,217,0.12)); }
+  tbody tr.selected { background: linear-gradient(90deg, #fff3cd, #ffeaa0); border-left: 4px solid #f6a623; }
+  tbody tr.selected:hover { background: linear-gradient(90deg, #ffeaa0, #ffd96a); }
   
   /* 大型勾選方塊 */
   .big-check {
@@ -3514,8 +3514,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </div>
     
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
-      <button class="btn-primary" onclick="generateExternal()">📧 複製信件 (Outlook 可直接貼)</button>
-      <button class="btn-secondary" onclick="previewExternal()">👁️ 預覽信件</button>
+      <button class="btn-primary" onclick="previewExternal()">👁️ 預覽並複製信件</button>
     </div>
     <div class="info-line">
       信件含完整資訊:場次、主辦、日期(含星期)、時間、地點、班別、時數、費用、狀態、報名連結 — 按開課日升冪排序
