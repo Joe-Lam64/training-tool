@@ -2981,35 +2981,33 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     --sky: #BDD9EF;       /* 天空藍淡 */
     --mint: #C8E6C9;      /* 清新綠淡 */
     --gold: #F6A623;      /* 金黃強調 */
-    --blue: #2C5282;      /* 天空藍主色 */
-    --teal: #2E8B57;      /* 橙綠主色 */
+    --blue: #3A7BD5;      /* 天空藍主色 */
+    --teal: #5BA3C9;      /* 天空藍輔色 */
     --warm: #F0F6FF;      /* 清晨天空背景 */
     --paper: #EEF4FA;     /* 主背景淡藍 */
     --ink: #1A202C;       /* 深藍灰文字 */
     --ink-soft: #4A6080;  /* 中藍輔助文字 */
     --line: #C8DCF0;      /* 藍灰分隔線 */
   }
-  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #EEF4FA 0%, #E8F4EE 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
+  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #EEF5FB 0%, #E8F2F8 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
   
   /* === Header === */
   .header {
-    background: linear-gradient(135deg, #2C5282 0%, #2E8B57 100%);
+    background: linear-gradient(135deg, #3A7BD5 0%, #5BA3C9 100%);
     color: white; padding: 14px 28px;
     display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 4px 16px rgba(44,82,130,0.3);
+    box-shadow: 0 3px 12px rgba(58,123,213,0.25);
     position: sticky; top: 0; z-index: 100;
-    border-top: 4px solid transparent;
-    border-image: linear-gradient(90deg, #F6A623, #FFD700, #F6A623) 1;
   }
   .header-left h1 { font-size: 22px; font-weight: 700; color: white; }
-  .header-left .sub { font-size: 13px; opacity: 0.9; margin-top: 2px; color: #F6E8C0; }
+  .header-left .sub { font-size: 13px; opacity: 0.85; margin-top: 2px; color: #D6EEFF; }
   .header-right { display: flex; align-items: center; gap: 14px; }
   .header-stat {
-    background: rgba(255,255,255,0.18); padding: 8px 16px; border-radius: 8px;
-    font-size: 14px; color: white; border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px;
+    font-size: 14px; color: white; border: 1px solid rgba(255,255,255,0.35);
     display: flex; align-items: center; gap: 6px;
   }
-  .header-stat strong { color: #FFD700; font-weight: 700; font-size: 16px; }
+  .header-stat strong { color: white; font-weight: 700; font-size: 16px; }
   .user-info { font-size: 15px; background: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px; }
   .user-info .name { font-weight: 700; color: var(--blue); }
   .user-info .role { background: var(--blue); color: white; padding: 3px 10px; border-radius: 10px; font-size: 13px; margin-left: 6px; }
@@ -3028,8 +3026,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     box-shadow: 0 3px 16px rgba(44,82,130,0.1); border: 1px solid #C8DCF0;
     border-left: 4px solid #F6A623;
   }
-  .card h2 { font-size: 16px; margin-bottom: 16px; color: #2C5282; display: flex; align-items: center; gap: 10px; font-weight: 700; }
-  .card h2::before { content:''; width:5px; height:20px; background: #F6A623; border-radius: 3px; }
+  .card h2 { font-size: 16px; margin-bottom: 16px; color: #3A7BD5; display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .card h2::before { content:''; width:5px; height:20px; background: #3A7BD5; border-radius: 3px; }
   
   /* === Buttons === */
   button.btn-primary {
