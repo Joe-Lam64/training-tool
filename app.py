@@ -3136,12 +3136,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Inputs === */
   input[type=text], input[type=number], select {
-    padding: 10px 14px; border: 2px solid #B8CCE4; border-radius: 10px;
-    font-family: inherit; font-size: 14px; background: white; color: #0F1F2E;
-    transition: border-color 0.15s;
+    padding: 10px 16px; border: 1.5px solid rgba(74,144,217,0.25); border-radius: 20px;
+    font-family: inherit; font-size: 14px; background: white; color: #1A202C;
+    transition: all 0.2s; box-shadow: 0 1px 4px rgba(26,95,168,0.06);
   }
-  input:focus, select:focus { outline: none; border-color: #00C896; background: white; }
-  label { font-size: 13px; color: #0F1F2E; font-weight: 600; }
+  input:focus, select:focus { 
+    outline: none; border-color: #4A90D9; background: white;
+    box-shadow: 0 0 0 3px rgba(74,144,217,0.15);
+  }
+  label { font-size: 13px; color: #1a5fa8; font-weight: 600; }
   
   /* === Badges === */
   .badge { display: inline-block; padding: 4px 11px; border-radius: 14px; font-size: 11px; font-weight: 700; }
@@ -3158,7 +3161,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .filter-bar {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
-    gap: 10px; margin-bottom: 14px;
+    gap: 8px; margin-bottom: 16px;
+    background: rgba(255,255,255,0.5);
+    backdrop-filter: blur(8px);
+    border-radius: 16px;
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.8);
+    box-shadow: 0 2px 12px rgba(26,95,168,0.08);
   }
   .stat { font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; }
   .stat strong { color: var(--teal); font-weight: 700; font-size: 18px; }
