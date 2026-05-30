@@ -2316,7 +2316,7 @@ ADMIN_TEMPLATE = r"""<!DOCTYPE html>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Microsoft JhengHei', sans-serif; background: #F0F8FF; min-height: 100vh; }
 .header { background: linear-gradient(135deg, #A8D8EA, #B5EAD7); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 20px; font-weight: 700; color: #2C3E50; }
+.header h1 { font-size: 22px; font-weight: 700; color: #2C3E50; }
 .back-btn { background: white; border: none; color: #3F72AF; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600; }
 .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
 .card { background: white; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(160,180,200,0.12); }
