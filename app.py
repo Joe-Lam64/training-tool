@@ -2596,8 +2596,8 @@ body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradien
 .back-btn { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; transition: all 0.2s; }
 .back-btn:hover { background: rgba(255,255,255,0.38); transform: translateY(-1px); }
 .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
-.card { background: rgba(255,255,255,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 24px rgba(26,95,168,0.12); border: 1px solid rgba(255,255,255,0.8); }
-.card h2 { font-size: 17px; font-weight: 700; color: #3F72AF; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #E5EEF4; }
+.card { background: rgba(255,255,255,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 24px rgba(26,95,168,0.12), 0 1px 4px rgba(255,255,255,0.8) inset; border: 1px solid rgba(255,255,255,0.75); }
+.card h2 { font-size: 17px; font-weight: 800; color: #1a5fa8; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(26,95,168,0.15); }
 .user-row { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid #F0F0F0; flex-wrap: wrap; }
 .user-row:last-child { border-bottom: none; }
 .user-label { font-weight: 600; font-size: 16px; min-width: 90px; }
