@@ -3103,12 +3103,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   .inst-card .label { font-weight: 700; font-size: 14px; color: #1A202C; }
   .inst-card .desc { font-size: 11px; color: #4A6080; }
 
-  /* 各協會勾選後才顯示左側彩色 */
-  #instTicsha.checked { border-left: 5px solid #63B3ED; }
-  #instCpc.checked    { border-left: 5px solid #48BB78; }
-  #instIsha.checked   { border-left: 5px solid #F6A623; }
-  #instCshm.checked   { border-left: 5px solid #B794F4; }
-  #instTete.checked   { border-left: 5px solid #FC8181; }
+  /* 未勾選：淡化 */
+  #instTicsha, #instCpc, #instIsha, #instCshm, #instTete { opacity: 0.7; }
+
+  /* 勾選後：各自彩色條 + 淡色背景 + 恢復不透明 */
+  #instTicsha.checked { border-left: 5px solid #3182CE; background: #EBF8FF; opacity: 1; }
+  #instCpc.checked    { border-left: 5px solid #38A169; background: #F0FFF4; opacity: 1; }
+  #instIsha.checked   { border-left: 5px solid #D69E2E; background: #FEFCBF; opacity: 1; }
+  #instCshm.checked   { border-left: 5px solid #805AD5; background: #FAF5FF; opacity: 1; }
+  #instTete.checked   { border-left: 5px solid #E53E3E; background: #FFF5F5; opacity: 1; }
   
   /* === Inputs === */
   input[type=text], input[type=number], select {
