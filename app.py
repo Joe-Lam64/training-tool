@@ -2088,6 +2088,72 @@ def api_force_logout():
     return jsonify({"ok": True})
 
 
+@app.route("/api/admin/stats")
+@login_required
+def api_admin_stats():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    period = request.args.get("period", "week")  # today / week / month
+    conn = _pg_conn()
+    if not conn:
+        return jsonify({"ok": False, "error": "資料庫無連線"})
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        if period == "today":
+            since = datetime.now().strftime("%Y-%m-%d") + " 00:00:00"
+        elif period == "month":
+            since = (datetime.now().replace(day=1)).strftime("%Y-%m-%d") + " 00:00:00"
+        else:
+            from datetime import timedelta
+            since = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S")
+
+        # 登入次數
+        cur.execute("SELECT username, COUNT(*) as cnt FROM activity_log WHERE action='login' AND timestamp >= %s GROUP BY username ORDER BY cnt DESC", (since,))
+        login_counts = [dict(r) for r in cur.fetchall()]
+
+        # 使用時長 (logout duration_seconds 加總)
+        cur.execute("SELECT username, SUM(duration_seconds) as total_sec FROM activity_log WHERE action='logout' AND timestamp >= %s GROUP BY username ORDER BY total_sec DESC", (since,))
+        durations = [dict(r) for r in cur.fetchall()]
+
+        # 協會更新次數
+        cur.execute("SELECT username, scraper_code, COUNT(*) as cnt FROM activity_log WHERE action='update_scraper' AND timestamp >= %s GROUP BY username, scraper_code ORDER BY cnt DESC", (since,))
+        scraper_counts = [dict(r) for r in cur.fetchall()]
+
+        # 信件產出
+        cur.execute("SELECT username, COUNT(*) as cnt, SUM(course_count) as total_courses FROM activity_log WHERE action='generate_email' AND timestamp >= %s GROUP BY username ORDER BY cnt DESC", (since,))
+        email_counts = [dict(r) for r in cur.fetchall()]
+
+        # 熱門課程 (course_ids JSON 展開)
+        cur.execute("SELECT course_ids FROM activity_log WHERE action='generate_email' AND timestamp >= %s AND course_ids IS NOT NULL", (since,))
+        course_counter = {}
+        for row in cur.fetchall():
+            try:
+                ids = json.loads(row["course_ids"])
+                for cid in ids:
+                    course_counter[cid] = course_counter.get(cid, 0) + 1
+            except Exception:
+                pass
+        top_courses = sorted(course_counter.items(), key=lambda x: x[1], reverse=True)[:10]
+
+        # 最近活動記錄 (最新 20 筆)
+        cur.execute("SELECT username, action, timestamp, scraper_code, course_count, email_subject FROM activity_log ORDER BY timestamp DESC LIMIT 20", )
+        recent = [dict(r) for r in cur.fetchall()]
+
+        return jsonify({
+            "ok": True, "period": period,
+            "login_counts": login_counts,
+            "durations": durations,
+            "scraper_counts": scraper_counts,
+            "email_counts": email_counts,
+            "top_courses": top_courses,
+            "recent": recent,
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+    finally:
+        conn.close()
+
+
 @app.route("/api/admin/online_detail")
 @login_required
 def api_online_detail():
@@ -2355,6 +2421,18 @@ input:focus { outline: none; border-color: #4FB3BF; }
 </div>
 <div class="container">
 
+  <!-- 統計儀表板 -->
+  <div class="card">
+    <h2>📊 使用統計儀表板</h2>
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-blue" onclick="loadStats('today')" id="btnToday">今日</button>
+      <button class="btn" onclick="loadStats('week')" id="btnWeek" style="background:#E5EEF4;color:#3F72AF;">本週</button>
+      <button class="btn" onclick="loadStats('month')" id="btnMonth" style="background:#E5EEF4;color:#3F72AF;">本月</button>
+      <span id="statsNote" style="font-size:12px;color:#999;margin-left:8px;align-self:center;"></span>
+    </div>
+    <div id="statsDashboard">載入中...</div>
+  </div>
+
   <!-- 在線狀態 -->
   <div class="card">
     <h2>🟢 目前在線狀態 <span id="onlineRefreshBtn" onclick="loadOnline()" style="font-size:12px;font-weight:400;color:#888;cursor:pointer;margin-left:8px;">🔄 刷新</span></h2>
@@ -2497,6 +2575,95 @@ async function addUser() {
   }
 }
 
+async function loadStats(period = 'week') {
+  ['today','week','month'].forEach(p => {
+    const btn = document.getElementById('btn' + p.charAt(0).toUpperCase() + p.slice(1));
+    btn.style.background = p === period ? '#3F72AF' : '#E5EEF4';
+    btn.style.color = p === period ? 'white' : '#3F72AF';
+  });
+  document.getElementById('statsNote').textContent = '載入中...';
+  const r = await fetch('/api/admin/stats?period=' + period);
+  const d = await r.json();
+  if (!d.ok) {
+    document.getElementById('statsDashboard').innerHTML = `<div style="color:#C44569;padding:12px;">⚠️ ${d.error}</div>`;
+    document.getElementById('statsNote').textContent = '';
+    return;
+  }
+  const periodLabel = {today:'今日',week:'本週',month:'本月'}[period];
+  document.getElementById('statsNote').textContent = `顯示${periodLabel}資料`;
+
+  const scraperLabel = {ticsha:'台灣省工商', cpc:'中國生產力中心', isha:'工業安全衛生協會', cshm:'勞工安全衛生學會'};
+
+  // 登入次數表
+  const loginRows = d.login_counts.map(r => `<tr><td>${r.username}</td><td style="text-align:center;">${r.cnt} 次</td></tr>`).join('') || '<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>';
+
+  // 使用時長表
+  const durRows = d.durations.map(r => {
+    const mins = Math.round((r.total_sec || 0) / 60);
+    return `<tr><td>${r.username}</td><td style="text-align:center;">${mins} 分鐘</td></tr>`;
+  }).join('') || '<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>';
+
+  // 協會更新表
+  const scraperRows = d.scraper_counts.map(r => `<tr><td>${r.username}</td><td>${scraperLabel[r.scraper_code]||r.scraper_code}</td><td style="text-align:center;">${r.cnt} 次</td></tr>`).join('') || '<tr><td colspan="3" style="color:#999;text-align:center;">無資料</td></tr>';
+
+  // 信件產出表
+  const emailRows = d.email_counts.map(r => `<tr><td>${r.username}</td><td style="text-align:center;">${r.cnt} 封</td><td style="text-align:center;">${r.total_courses||0} 門課</td></tr>`).join('') || '<tr><td colspan="3" style="color:#999;text-align:center;">無資料</td></tr>';
+
+  // 最近活動
+  const actionLabel = {login:'登入',logout:'登出',update_scraper:'更新協會',generate_email:'產生信件'};
+  const recentRows = d.recent.map(r => {
+    let detail = '';
+    if (r.scraper_code) detail = scraperLabel[r.scraper_code]||r.scraper_code;
+    if (r.course_count) detail = `${r.course_count} 門課`;
+    return `<tr><td style="color:#888;font-size:12px;">${r.timestamp}</td><td>${r.username}</td><td>${actionLabel[r.action]||r.action}</td><td style="font-size:12px;color:#666;">${detail}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" style="color:#999;text-align:center;">無資料</td></tr>';
+
+  const tableStyle = 'width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px;';
+  const thStyle = 'background:#4472C4;color:white;padding:8px;text-align:left;';
+  const tdStyle = 'padding:8px;border-bottom:1px solid #F0F0F0;';
+
+  document.getElementById('statsDashboard').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🔑 登入次數</div>
+        <table style="${tableStyle}">
+          <tr><th style="${thStyle}">使用者</th><th style="${thStyle}">次數</th></tr>
+          ${loginRows}
+        </table>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">⏱ 使用時長</div>
+        <table style="${tableStyle}">
+          <tr><th style="${thStyle}">使用者</th><th style="${thStyle}">時長</th></tr>
+          ${durRows}
+        </table>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🔄 協會更新次數</div>
+        <table style="${tableStyle}">
+          <tr><th style="${thStyle}">使用者</th><th style="${thStyle}">協會</th><th style="${thStyle}">次數</th></tr>
+          ${scraperRows}
+        </table>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">📧 信件產出</div>
+        <table style="${tableStyle}">
+          <tr><th style="${thStyle}">使用者</th><th style="${thStyle}">封數</th><th style="${thStyle}">總課程數</th></tr>
+          ${emailRows}
+        </table>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:700;color:#3F72AF;margin-bottom:8px;">🕐 最近活動記錄</div>
+      <table style="${tableStyle}">
+        <tr><th style="${thStyle}">時間</th><th style="${thStyle}">使用者</th><th style="${thStyle}">動作</th><th style="${thStyle}">詳情</th></tr>
+        ${recentRows}
+      </table>
+    </div>
+  `;
+}
+
+loadStats('week');
 loadOnline();
 loadUsers();
 setInterval(loadOnline, 30000);
