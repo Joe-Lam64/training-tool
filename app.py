@@ -1881,7 +1881,7 @@ class TeteScraper:
                     "name": course_name,
                     "branch": branch,
                     "category": "輻射",
-                    "nationality": "本國",
+                    "nationality": "本國籍",
                     "start_date": start_date,
                     "end_date": end_date,
                     "class_type": "",
@@ -3558,10 +3558,13 @@ function clearAllCategories() {
 function onCategoryChange() {
   const checked = [...document.querySelectorAll('#categoryDropdown input[type=checkbox]:checked')];
   const btn = document.getElementById('categoryToggleBtn');
+  const total = document.querySelectorAll('#categoryDropdown input[type=checkbox]').length;
   if (checked.length === 0) {
+    btn.textContent = '🏷️ (未選類別)';
+  } else if (checked.length === total) {
     btn.textContent = '🏷️ 全部類別';
   } else {
-    btn.textContent = '🏷️ ' + checked.map(el => el.value).join('、');
+    btn.textContent = `🏷️ 已選 ${checked.length} 項`;
   }
   renderTable();
 }
