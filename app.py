@@ -3384,46 +3384,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <div class="card">
     <h2>① 抓取課程資料</h2>
     <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:14px;">
-      <label class="inst-card checked" id="instTicsha" onclick="toggleInst('ticsha')">
-        <input type="checkbox" id="instCheckTicsha" checked>
-        <div style="flex:1;">
-          <div class="label">台灣省工商安全衛生協會</div>
-          <div class="desc">中壢 · 桃園 · 新竹 三個分會</div>
-        </div>
-        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('ticsha');" title="只更新此協會,不影響其他">🔄 只更新</button>
-      </label>
-      <label class="inst-card checked" id="instCpc" onclick="toggleInst('cpc')">
-        <input type="checkbox" id="instCheckCpc" checked>
-        <div style="flex:1;">
-          <div class="label">中國生產力中心 (CPC)</div>
-          <div class="desc">桃園 · 台北承德 / 職安·消防·營建 三類</div>
-        </div>
-        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('cpc');" title="只更新此協會,不影響其他">🔄 只更新</button>
-      </label>
-      <label class="inst-card checked" id="instIsha" onclick="toggleInst('isha')">
-        <input type="checkbox" id="instCheckIsha" checked>
-        <div style="flex:1;">
-          <div class="label">中華民國工業安全衛生協會 (ISHA)</div>
-          <div class="desc">北區 5 個職訓中心:台北·新北·桃園·中壢·新竹</div>
-        </div>
-        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('isha');" title="只更新此協會,不影響其他">🔄 只更新</button>
-      </label>
-      <label class="inst-card checked" id="instCshm" onclick="toggleInst('cshm')">
-        <input type="checkbox" id="instCheckCshm" checked>
-        <div style="flex:1;">
-          <div class="label">中國勞工安全衛生管理學會 (CSHM)</div>
-          <div class="desc">台北 · 桃園 · 中壢 三個分會</div>
-        </div>
-        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('cshm');" title="只更新此協會,不影響其他">🔄 只更新</button>
-      </label>
-      <label class="inst-card checked" id="instTete" onclick="toggleInst('tete')">
-        <input type="checkbox" id="instCheckTete" checked>
-        <div style="flex:1;">
-          <div class="label">台灣能量輻射防護偵測有限公司 (TETE)</div>
-          <div class="desc">北部地區（台北・中壢），輻射類課程</div>
-        </div>
-        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('tete');" title="只更新此協會,不影響其他">🔄 只更新</button>
-      </label>
+      <div id="instCardContainer" style="display:contents;"></div>
       </div>
     <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;margin-top:12px;">
       ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕
@@ -3620,6 +3581,29 @@ function toggleInst(code) {
   cb.checked = !cb.checked;
   const card = document.getElementById('inst' + code.charAt(0).toUpperCase() + code.slice(1));
   card.classList.toggle('checked', cb.checked);
+}
+
+async function loadScrapers() {
+  try {
+    const resp = await fetch('/api/scrapers');
+    if (resp.status === 401) return;
+    const scrapers = await resp.json();
+    const container = document.getElementById('instCardContainer');
+    container.innerHTML = scrapers.map(s => {
+      const capCode = s.code.charAt(0).toUpperCase() + s.code.slice(1);
+      return `
+        <label class="inst-card checked" id="inst${capCode}" onclick="toggleInst('${s.code}')">
+          <input type="checkbox" id="instCheck${capCode}" checked>
+          <div style="flex:1;">
+            <div class="label">${s.name}</div>
+            <div class="desc">${s.desc || ''}</div>
+          </div>
+          <button type="button" class="inst-update-btn"
+            onclick="event.stopPropagation();event.preventDefault();updateOnly('${s.code}');"
+            title="只更新此協會,不影響其他">🔄 只更新</button>
+        </label>`;
+    }).join('');
+  } catch(e) { console.error(e); }
 }
 
 async function loadCourses() {
@@ -4049,6 +4033,7 @@ function removeEmployee(btn) {
 }
 addEmployee(); // 預設先放一列空的
 
+loadScrapers();
 loadCourses();
 refreshOnline();
 </script>
