@@ -1943,6 +1943,7 @@ def login_page():
             "login_time": time.time(),
         }
         update_online(user["username"], my_ip)
+        log_activity(user["username"], "login", ip=my_ip)
         return redirect(url_for("index"))
     
     return render_template_string(LOGIN_TEMPLATE, error=None, show_force=False)
@@ -1951,7 +1952,11 @@ def login_page():
 @app.route("/logout")
 def logout():
     if "user" in session:
-        remove_online(session["user"]["username"], request.remote_addr or "?")
+        uname = session["user"]["username"]
+        login_time = session["user"].get("login_time", time.time())
+        duration = int(time.time() - login_time)
+        remove_online(uname, request.remote_addr or "?")
+        log_activity(uname, "logout", ip=request.remote_addr or "?", duration_seconds=duration)
     session.pop("user", None)
     return redirect(url_for("login_page"))
 
@@ -2138,6 +2143,9 @@ def api_update():
         codes = body.get("scrapers", ["ticsha"])
         force_refresh = bool(body.get("force_refresh", False))
         data = update_courses(codes, force_refresh=force_refresh)
+        for code in codes:
+            log_activity(session["user"]["username"], "update_scraper",
+                        ip=request.remote_addr or "?", scraper_code=code)
         return jsonify({"ok": True, "count": len(data["courses"]), "last_updated": data["last_updated"]})
     finally:
         with IS_UPDATING_LOCK:
@@ -2289,6 +2297,13 @@ def api_email():
         '<p>敬請回覆,謝謝!</p>',
         '</div>',
     ])
+    log_activity(
+        session["user"]["username"], "generate_email",
+        ip=request.remote_addr or "?",
+        course_ids=[c.get("id", "") for c in selected],
+        course_count=len(selected),
+        email_subject=subject,
+    )
     return jsonify({"subject": subject, "html": "".join(html_parts)})
 
 
@@ -3529,6 +3544,7 @@ if __name__ == "__main__":
 # gunicorn 直接 import app:app,需要先初始化 DB
 try:
     init_db()
+    init_activity_log()
     print("[Cloud Init] 雲端模式,資料庫初始化完成")
 except Exception as e:
     print(f"[Cloud Init ERROR] {e}")
