@@ -2978,16 +2978,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --sky: #B8D4DC;       /* 加深灰藍 */
-    --mint: #B8D8CC;      /* 加深灰綠 */
-    --lavender: #C8C4E0;  /* 加深灰紫 */
-    --blue: #2C5282;      /* 加深藍 */
-    --teal: #2E7D6E;      /* 加深青綠 */
-    --warm: #F0EDE8;      /* 暖米白背景 */
-    --paper: #EEECEA;     /* 主背景暖米白 */
-    --ink: #1A1A1A;       /* 深灰文字 */
-    --ink-soft: #4A4A4A;  /* 中灰輔助文字 */
-    --line: #D0CEC8;      /* 暖灰分隔線 */
+    --sky: #B8CCE4;       /* 星空藍淡 */
+    --mint: #A8CCB8;      /* 自然綠淡 */
+    --lavender: #C8C4E0;  /* 淡紫輔助 */
+    --blue: #1B3F6E;      /* 星空藍主色 */
+    --teal: #2E7D52;      /* 自然綠主色 */
+    --warm: #EEF2F7;      /* 清晨天空背景 */
+    --paper: #EEF2F7;     /* 主背景 */
+    --ink: #0F1F2E;       /* 深夜藍文字 */
+    --ink-soft: #3D5A73;  /* 中藍輔助文字 */
+    --line: #C4D4E4;      /* 藍灰分隔線 */
   }
   body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
   
