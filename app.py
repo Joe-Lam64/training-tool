@@ -2993,30 +2993,47 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Header === */
   .header {
-    background: linear-gradient(135deg, #4A90D9 0%, #63B3ED 100%);
-    color: white; padding: 14px 28px;
+    background: linear-gradient(120deg, #1a5fa8 0%, #2980d4 50%, #4AAEE0 100%);
+    color: white; padding: 16px 32px;
     display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 3px 14px rgba(74,144,217,0.3);
+    box-shadow: 0 4px 20px rgba(26,95,168,0.35);
     position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
   }
-  .header-left h1 { font-size: 22px; font-weight: 700; color: white; }
-  .header-left .sub { font-size: 13px; opacity: 0.9; margin-top: 2px; color: #D6EEFF; }
-  .header-right { display: flex; align-items: center; gap: 14px; }
+  .header-left h1 { 
+    font-size: 24px; font-weight: 800; color: white; 
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .header-left .sub { 
+    font-size: 12px; margin-top: 3px; color: rgba(255,255,255,0.8);
+    letter-spacing: 0.3px;
+  }
+  .header-right { display: flex; align-items: center; gap: 10px; }
   .header-stat {
-    background: rgba(255,255,255,0.22); padding: 8px 16px; border-radius: 8px;
-    font-size: 14px; color: white; border: 1px solid rgba(255,255,255,0.4);
-    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.15); padding: 7px 14px; border-radius: 20px;
+    font-size: 13px; color: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; gap: 5px;
   }
-  .header-stat strong { color: #FFF9C4; font-weight: 700; font-size: 16px; }
-  .user-info { font-size: 15px; background: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px; }
-  .user-info .name { font-weight: 700; color: var(--blue); }
-  .user-info .role { background: var(--blue); color: white; padding: 3px 10px; border-radius: 10px; font-size: 13px; margin-left: 6px; }
+  .header-stat strong { color: white; font-weight: 800; font-size: 15px; }
+  .user-info { 
+    font-size: 14px; background: rgba(255,255,255,0.18); 
+    padding: 7px 14px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.25);
+    color: white;
+  }
+  .user-info .name { font-weight: 700; color: white; }
+  .user-info .role { 
+    background: rgba(255,255,255,0.3); color: white; 
+    padding: 2px 10px; border-radius: 10px; font-size: 12px; margin-left: 6px; 
+  }
   .logout-btn {
-    background: white; border: none; color: var(--blue); padding: 10px 20px;
-    font-family: inherit; font-size: 15px; border-radius: 8px; cursor: pointer;
-    font-weight: 600; transition: all 0.15s;
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); 
+    color: white; padding: 8px 18px;
+    font-family: inherit; font-size: 14px; border-radius: 20px; cursor: pointer;
+    font-weight: 600; transition: all 0.2s;
   }
-  .logout-btn:hover { background: var(--lavender); }
+  .logout-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
   
   .container { max-width: 1400px; margin: 0 auto; padding: 20px 40px; }
   
