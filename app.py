@@ -3184,8 +3184,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   }
   
   .table-wrap {
-    max-height: 480px; overflow-y: auto;
+    max-height: 480px; overflow-y: auto; overflow-x: hidden;
     border: 2px solid var(--line); border-radius: 12px; background: white;
+    position: relative; z-index: 1;
   }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   
