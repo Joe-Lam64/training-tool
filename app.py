@@ -3726,8 +3726,8 @@ document.addEventListener('click', function(e) {
 
 // === Commit 15: 單獨更新某一個協會 (不影響其他) ===
 async function updateOnly(code) {
-  const labels = {ticsha: '台灣省工商安全衛生協會', cpc: '中國生產力中心', isha: '中華民國工業安全衛生協會', cshm: '中國勞工安全衛生管理學會'};
-  const label = labels[code] || code;
+  const card = document.getElementById('inst' + code.charAt(0).toUpperCase() + code.slice(1));
+  const label = card ? card.querySelector('.label').textContent : code;
   if (!confirm(`只更新「${label}」?\n\n其他協會的資料會保留不動。`)) return;
   showLoading(`正在抓取 ${label}...`);
   const progressTimer = setInterval(async () => {
