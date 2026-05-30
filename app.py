@@ -3537,7 +3537,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <div class="modal-box">
     <div class="modal-head">
       <strong>📧 信件預覽 <span id="prevMode" style="background:var(--lavender);padding:2px 10px;border-radius:10px;font-size:12px;margin-left:8px;"></span></strong>
-      <button class="btn-secondary" onclick="document.getElementById('previewModal').classList.remove('show')">關閉</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" onclick="copyFromPreview()" style="padding:8px 16px;font-size:13px;">📋 複製信件</button>
+        <button class="btn-secondary" onclick="document.getElementById('previewModal').classList.remove('show')">關閉</button>
+      </div>
     </div>
     <div class="modal-meta"><strong>主旨:</strong> <span id="prevSubject"></span></div>
     <div class="modal-body" id="prevBody"></div>
@@ -3989,6 +3992,18 @@ async function buildEmail(mode) {
   });
   if (resp.status === 401) { window.location.href = '/login'; return null; }
   return await resp.json();
+}
+
+async function copyFromPreview() {
+  const html = document.getElementById('prevBody').innerHTML;
+  try {
+    const blob = new Blob([html], {type: 'text/html'});
+    await navigator.clipboard.write([new ClipboardItem({'text/html': blob})]);
+    toast('✓ 已複製！打開 Outlook 按 Ctrl+V 即可貼上', 'success');
+  } catch(e) {
+    await navigator.clipboard.writeText(html);
+    toast('已複製 (HTML 原始碼)', 'success');
+  }
 }
 
 async function previewExternal() { await preview('external', '信件'); }
