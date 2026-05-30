@@ -3177,6 +3177,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     padding: 10px 16px; border-radius: 12px;
     border: 1px solid rgba(74,144,217,0.15);
     display: flex; align-items: center; justify-content: space-between;
+    position: relative; z-index: 1;
   }
   .stat strong { 
     color: #1a5fa8; font-weight: 800; font-size: 20px;
@@ -3422,7 +3423,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <option value="台灣能量輻射防護偵測有限公司">台灣能量輻射防護偵測有限公司 (TETE)</option>
       </select>
       <select id="filterBranch" onchange="renderTable()" style="display:none;"><option value="">全部分會</option></select>
-      <div id="branchMultiBox" style="position:relative;z-index:100;">
+      <div id="branchMultiBox" style="position:relative;z-index:300;">
         <button type="button" onclick="toggleBranchDropdown()" id="branchToggleBtn"
                 style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
           📍 全部分會
@@ -3431,7 +3432,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <div id="branchOptions"></div>
         </div>
       </div>
-      <div id="categoryMultiBox" style="position:relative;z-index:100;">
+      <div id="categoryMultiBox" style="position:relative;z-index:300;">
         <button type="button" onclick="toggleCategoryDropdown()" id="categoryToggleBtn"
                 style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
           🏷️ 複訓 (預設)
