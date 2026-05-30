@@ -2978,29 +2978,30 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --sky: #B8CCE4;       /* 星空藍淡 */
-    --mint: #A8CCB8;      /* 自然綠淡 */
-    --lavender: #C8C4E0;  /* 淡紫輔助 */
-    --blue: #1B3F6E;      /* 星空藍主色 */
-    --teal: #2E7D52;      /* 自然綠主色 */
-    --warm: #EEF2F7;      /* 清晨天空背景 */
-    --paper: #EEF2F7;     /* 主背景 */
-    --ink: #0F1F2E;       /* 深夜藍文字 */
-    --ink-soft: #3D5A73;  /* 中藍輔助文字 */
-    --line: #C4D4E4;      /* 藍灰分隔線 */
+    --sky: #7EC8E3;       /* 星空淡藍 */
+    --mint: #00C896;      /* 極光綠 */
+    --lavender: #A78BCA;  /* 星雲紫 */
+    --blue: #1B3F6E;      /* 星空深藍 */
+    --teal: #00C896;      /* 極光綠主色 */
+    --warm: #0D1B2A;      /* 深空背景 */
+    --paper: #0D1B2A;     /* 主背景深空藍 */
+    --ink: #E8F4FD;       /* 星光白文字 */
+    --ink-soft: #A0BDD0;  /* 淡藍輔助文字 */
+    --line: #1E3A5F;      /* 深藍分隔線 */
   }
-  body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
+  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #0D1B2A 0%, #1B2A4A 60%, #0D2A1E 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
   
   /* === Header === */
   .header {
-    background: linear-gradient(135deg, #1a3a5c 0%, #1e5f52 100%);
+    background: linear-gradient(135deg, #0A1628 0%, #0D2A1E 100%);
     color: white; padding: 14px 28px;
     display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 20px rgba(0,200,150,0.15);
     position: sticky; top: 0; z-index: 100;
+    border-bottom: 1px solid rgba(0,200,150,0.3);
   }
   .header-left h1 { font-size: 22px; font-weight: 700; color: white; }
-  .header-left .sub { font-size: 13px; opacity: 0.85; margin-top: 2px; color: #B8D8DC; }
+  .header-left .sub { font-size: 13px; opacity: 0.85; margin-top: 2px; color: #7EC8E3; }
   .header-right { display: flex; align-items: center; gap: 14px; }
   .header-stat {
     background: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px;
@@ -3022,10 +3023,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Cards === */
   .card {
-    background: white; border-radius: 14px; padding: 22px; margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(160,180,200,0.12);
+    background: rgba(255,255,255,0.06); border-radius: 14px; padding: 22px; margin-bottom: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3); border: 1px solid rgba(126,200,227,0.2);
+    backdrop-filter: blur(8px);
   }
-  .card h2 { font-size: 16px; margin-bottom: 16px; color: var(--blue); display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .card h2 { font-size: 16px; margin-bottom: 16px; color: #7EC8E3; display: flex; align-items: center; gap: 10px; font-weight: 700; }
   .card h2::before { content:''; width:5px; height:20px; background: var(--teal); border-radius: 3px; }
   
   /* === Buttons === */
