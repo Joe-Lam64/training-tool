@@ -3057,21 +3057,22 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 
   /* === Institute card (協會勾選) === */
   .inst-card {
-    background: linear-gradient(135deg, #F0F8FF 0%, #E8F5F0 100%);
+    background: white;
     border: 2.5px solid var(--sky);
     border-radius: 12px; padding: 14px 20px;
     display: flex; align-items: center; gap: 12px;
     cursor: pointer; transition: all 0.15s;
     user-select: none;
   }
-  .inst-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(168,216,234,0.4); }
+  .inst-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(27,63,110,0.15); }
   .inst-card.checked {
-    background: linear-gradient(135deg, var(--mint) 0%, var(--sky) 100%);
+    background: white;
     border-color: var(--blue);
+    border-left: 5px solid var(--teal);
   }
   .inst-card input { width: 22px; height: 22px; cursor: pointer; accent-color: var(--blue); }
-  .inst-card .label { font-weight: 600; font-size: 14px; }
-  .inst-card .desc { font-size: 11px; color: var(--ink-soft); }
+  .inst-card .label { font-weight: 600; font-size: 14px; color: #0F1F2E; }
+  .inst-card .desc { font-size: 11px; color: #3D5A73; }
   
   /* === Inputs === */
   input[type=text], input[type=number], select {
