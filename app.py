@@ -3526,6 +3526,22 @@ function populateBranches() {
   updateBranchButtonText();
 }
 
+function toggleCategoryDropdown() {
+  const dd = document.getElementById('categoryDropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+
+function onCategoryChange() {
+  const checked = [...document.querySelectorAll('#categoryDropdown input[type=checkbox]:checked')];
+  const btn = document.getElementById('categoryToggleBtn');
+  if (checked.length === 0) {
+    btn.textContent = '🏷️ 全部類別';
+  } else {
+    btn.textContent = '🏷️ ' + checked.map(el => el.value).join('、');
+  }
+  renderTable();
+}
+
 function toggleBranchDropdown() {
   const d = document.getElementById('branchDropdown');
   d.style.display = d.style.display === 'none' ? 'block' : 'none';
