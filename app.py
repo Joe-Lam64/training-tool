@@ -2909,37 +2909,47 @@ LOGIN_TEMPLATE = r"""<!DOCTYPE html>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Microsoft JhengHei', sans-serif;
-  background: linear-gradient(135deg, #A8D8EA 0%, #AA96DA 50%, #B5EAD7 100%);
+  background: linear-gradient(160deg, #C8DFF5 0%, #B8D4EE 50%, #C5E0F0 100%);
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background-attachment: fixed;
 }
 .login-box {
-  background: white; border-radius: 20px; padding: 44px;
-  box-shadow: 0 20px 60px rgba(100,120,150,0.25); width: 420px;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 24px; padding: 48px;
+  box-shadow: 0 20px 60px rgba(26,95,168,0.2), 0 1px 4px rgba(255,255,255,0.9) inset;
+  border: 1px solid rgba(255,255,255,0.85);
+  width: 420px;
 }
-.login-box .brand { color: #3F72AF; font-size: 14px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;}
-.login-box h1 { color: #3F72AF; font-size: 22px; margin-bottom: 8px; }
-.login-box .sub { color: #888; font-size: 13px; margin-bottom: 32px; }
+.login-box .brand { color: #1a5fa8; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin-bottom: 6px; opacity: 0.7; }
+.login-box h1 { color: #1a5fa8; font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+.login-box .sub { color: #4A7BA7; font-size: 13px; margin-bottom: 32px; }
 .field { margin-bottom: 18px; }
-.field label { display: block; font-size: 13px; color: #555; margin-bottom: 8px; font-weight: 600; }
+.field label { display: block; font-size: 13px; color: #1a5fa8; margin-bottom: 8px; font-weight: 700; }
 .field input {
-  width: 100%; padding: 13px 16px; border: 2px solid #DBE9EE;
-  border-radius: 10px; font-size: 15px; font-family: inherit; background: #F8FBFD;
+  width: 100%; padding: 13px 16px; border: 2px solid rgba(74,144,217,0.25);
+  border-radius: 12px; font-size: 15px; font-family: inherit; 
+  background: rgba(255,255,255,0.7); color: #1A202C;
+  transition: all 0.2s;
 }
-.field input:focus { outline: none; border-color: #87BDD8; background: white; }
+.field input:focus { outline: none; border-color: #4A90D9; background: white; box-shadow: 0 0 0 3px rgba(74,144,217,0.15); }
 button {
-  width: 100%; background: linear-gradient(135deg, #87BDD8, #B5EAD7); color: #3F4E5C; border: none;
-  padding: 14px; font-size: 16px; font-weight: 700; border-radius: 10px;
+  width: 100%; 
+  background: linear-gradient(135deg, #2980d4, #4AAEE0); 
+  color: white; border: none;
+  padding: 14px; font-size: 16px; font-weight: 700; border-radius: 12px;
   cursor: pointer; font-family: inherit; margin-top: 12px;
-  box-shadow: 0 4px 12px rgba(135,189,216,0.4);
-  transition: transform 0.1s;
+  box-shadow: 0 4px 16px rgba(41,128,212,0.35);
+  transition: all 0.2s;
 }
-button:hover { transform: translateY(-2px); }
+button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(41,128,212,0.45); }
 button.force-btn { 
   background: linear-gradient(135deg, #FFB6B9, #FAE3D9); color: #B73E3E; margin-top: 8px;
   box-shadow: 0 4px 12px rgba(255,182,185,0.4);
 }
-.error { background: #FFE5E5; color: #C44569; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; }
-.footer { text-align: center; margin-top: 22px; font-size: 11px; color: #AAA; line-height: 1.6; }
+.error { background: rgba(255,229,229,0.8); color: #C44569; padding: 12px; border-radius: 10px; margin-bottom: 16px; font-size: 13px; line-height: 1.5; border: 1px solid rgba(196,69,105,0.2); }
+.footer { text-align: center; margin-top: 22px; font-size: 11px; color: #4A7BA7; line-height: 1.6; opacity: 0.7; }
 </style></head>
 <body>
 <div class="login-box">
