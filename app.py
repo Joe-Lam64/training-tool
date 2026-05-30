@@ -2590,12 +2590,13 @@ ADMIN_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="zh-TW"><head><meta charset="UTF-8"><title>後台管理</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Microsoft JhengHei', sans-serif; background: #F0F8FF; min-height: 100vh; }
+body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #C8DFF5 0%, #B8D4EE 50%, #C5E0F0 100%); min-height: 100vh; background-attachment: fixed; }
 .header { background: linear-gradient(120deg, #1a5fa8 0%, #4AAEE0 100%); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 3px 12px rgba(26,95,168,0.25); }
 .header h1 { font-size: 22px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.15); }
-.back-btn { background: white; border: none; color: #3F72AF; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600; }
+.back-btn { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; transition: all 0.2s; }
+.back-btn:hover { background: rgba(255,255,255,0.38); transform: translateY(-1px); }
 .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
-.card { background: white; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(160,180,200,0.12); }
+.card { background: rgba(255,255,255,0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 24px rgba(26,95,168,0.12); border: 1px solid rgba(255,255,255,0.8); }
 .card h2 { font-size: 17px; font-weight: 700; color: #3F72AF; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #E5EEF4; }
 .user-row { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-bottom: 1px solid #F0F0F0; flex-wrap: wrap; }
 .user-row:last-child { border-bottom: none; }
@@ -2989,7 +2990,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     --ink-soft: #4A7BA7;  /* 中藍灰輔助 */
     --line: #BEE3F8;      /* 極淡藍分隔線 */
   }
-  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #F0F7FF 0%, #E8F4FD 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
+  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #C8DFF5 0%, #B8D4EE 50%, #C5E0F0 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
   
   /* === Header === */
   .header {
@@ -3044,17 +3045,22 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Cards === */
   .card {
-    background: linear-gradient(160deg, #ffffff 0%, #f7fbff 100%);
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-radius: 16px; padding: 24px; margin-bottom: 18px;
-    box-shadow: 0 4px 20px rgba(26,95,168,0.1), 0 1px 4px rgba(26,95,168,0.06);
-    border: 1px solid #D6E8F8;
-    transition: box-shadow 0.2s;
+    box-shadow: 0 4px 24px rgba(26,95,168,0.12), 0 1px 4px rgba(255,255,255,0.8) inset;
+    border: 1px solid rgba(255,255,255,0.8);
+    transition: box-shadow 0.2s, transform 0.2s;
   }
-  .card:hover { box-shadow: 0 8px 28px rgba(26,95,168,0.14), 0 2px 6px rgba(26,95,168,0.08); }
+  .card:hover { 
+    box-shadow: 0 8px 32px rgba(26,95,168,0.18); 
+    transform: translateY(-1px);
+  }
   .card h2 { 
     font-size: 16px; margin-bottom: 18px; color: #1a5fa8; 
     display: flex; align-items: center; gap: 10px; font-weight: 800;
-    padding-bottom: 12px; border-bottom: 2px solid #EBF4FF;
+    padding-bottom: 12px; border-bottom: 1px solid rgba(26,95,168,0.12);
   }
   .card h2::before { content:''; width:4px; height:20px; background: linear-gradient(180deg, #2980d4, #4AAEE0); border-radius: 3px; }
   
