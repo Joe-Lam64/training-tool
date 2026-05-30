@@ -2877,9 +2877,9 @@ async function loadStats(period = 'week') {
     return `<tr><td style="color:#888;font-size:12px;">${r.timestamp}</td><td>${r.username}</td><td>${actionLabel[r.action]||r.action}</td><td style="font-size:12px;color:#666;">${detail}</td></tr>`;
   }).join('') || '<tr><td colspan="4" style="color:#999;text-align:center;">無資料</td></tr>';
 
-  const tableStyle = 'width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px;';
-  const thStyle = 'background:#4472C4;color:white;padding:8px;text-align:left;';
-  const tdStyle = 'padding:8px;border-bottom:1px solid #F0F0F0;';
+  const tableStyle = 'width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px;border-radius:8px;overflow:hidden;';
+  const thStyle = 'background:linear-gradient(135deg,#2980d4,#4AAEE0);color:white;padding:10px 12px;text-align:left;font-weight:700;';
+  const tdStyle = 'padding:9px 12px;border-bottom:1px solid rgba(74,144,217,0.1);';
 
   document.getElementById('statsDashboard').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
