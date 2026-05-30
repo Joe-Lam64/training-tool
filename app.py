@@ -3162,13 +3162,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
     gap: 8px; margin-bottom: 16px;
-    background: rgba(255,255,255,0.5);
-    backdrop-filter: blur(8px);
+    background: rgba(255,255,255,0.6);
     border-radius: 16px;
     padding: 12px 14px;
     border: 1px solid rgba(255,255,255,0.8);
     box-shadow: 0 2px 12px rgba(26,95,168,0.08);
-    overflow: visible;
   }
   .stat { 
     font-size: 13px; color: #4A7BA7; margin-bottom: 12px;
