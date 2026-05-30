@@ -3384,7 +3384,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <div class="card">
     <h2>① 抓取課程資料</h2>
     <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:14px;">
-      <div id="instCardContainer" style="display:contents;"></div>
+      <div id="instCardContainer" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;grid-column:1/-1;"></div>
       </div>
     <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;margin-top:12px;">
       ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕
