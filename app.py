@@ -2993,12 +2993,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Header === */
   .header {
-    background: linear-gradient(120deg, #1a5fa8 0%, #2980d4 50%, #4AAEE0 100%);
+    background: rgba(74,144,217,0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     color: white; padding: 16px 32px;
     display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 4px 20px rgba(26,95,168,0.35);
+    box-shadow: 0 2px 16px rgba(26,95,168,0.2);
     position: sticky; top: 0; z-index: 100;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
   }
   .header-left h1 { 
     font-size: 24px; font-weight: 800; color: white; 
