@@ -2590,7 +2590,14 @@ ADMIN_TEMPLATE = r"""<!DOCTYPE html>
 <html lang="zh-TW"><head><meta charset="UTF-8"><title>後台管理</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #DEEDF8 0%, #D0E6F5 50%, #D8EDF5 100%); min-height: 100vh; background-attachment: fixed; }
+body { 
+  font-family: 'Microsoft JhengHei', sans-serif; 
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(147,210,240,0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(180,220,245,0.4) 0%, transparent 50%),
+    linear-gradient(160deg, #DCF0FA 0%, #C8E0F0 50%, #D5EBF5 100%);
+  min-height: 100vh; background-attachment: fixed; 
+}
 .header { background: linear-gradient(120deg, #1a5fa8 0%, #4AAEE0 100%); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 3px 12px rgba(26,95,168,0.25); }
 .header h1 { font-size: 22px; font-weight: 800; color: white; text-shadow: 0 2px 6px rgba(0,0,0,0.3); letter-spacing: 0.5px; }
 .back-btn { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; transition: all 0.2s; }
@@ -3004,7 +3011,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     --ink-soft: #4A7BA7;  /* 中藍灰輔助 */
     --line: #BEE3F8;      /* 極淡藍分隔線 */
   }
-  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #DEEDF8 0%, #D0E6F5 50%, #D8EDF5 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
+  body { 
+    font-family: 'Microsoft JhengHei', sans-serif; 
+    background: 
+      radial-gradient(ellipse at 20% 20%, rgba(147,210,240,0.5) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(180,220,245,0.4) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 30%, rgba(200,230,250,0.3) 0%, transparent 40%),
+      linear-gradient(160deg, #DCF0FA 0%, #C8E0F0 50%, #D5EBF5 100%);
+    color: var(--ink); min-height: 100vh; background-attachment: fixed; 
+  }
   
   /* === Header === */
   .header {
