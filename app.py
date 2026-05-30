@@ -2589,8 +2589,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     box-shadow: 0 2px 12px rgba(100,160,200,0.15);
     position: sticky; top: 0; z-index: 100;
   }
-  .header-left h1 { font-size: 20px; font-weight: 700; }
-  .header-left .sub { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+  .header-left h1 { font-size: 22px; font-weight: 700; }
+  .header-left .sub { font-size: 13px; opacity: 0.75; margin-top: 2px; }
   .header-right { display: flex; align-items: center; gap: 14px; }
   .header-stat {
     background: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px;
