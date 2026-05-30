@@ -3039,11 +3039,19 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Cards === */
   .card {
-    background: white; border-radius: 14px; padding: 22px; margin-bottom: 16px;
-    box-shadow: 0 2px 12px rgba(74,144,217,0.1); border: 1px solid #BEE3F8;
+    background: linear-gradient(160deg, #ffffff 0%, #f7fbff 100%);
+    border-radius: 16px; padding: 24px; margin-bottom: 18px;
+    box-shadow: 0 4px 20px rgba(26,95,168,0.1), 0 1px 4px rgba(26,95,168,0.06);
+    border: 1px solid #D6E8F8;
+    transition: box-shadow 0.2s;
   }
-  .card h2 { font-size: 16px; margin-bottom: 16px; color: #2B6CB0; display: flex; align-items: center; gap: 10px; font-weight: 700; }
-  .card h2::before { content:''; width:5px; height:20px; background: #4A90D9; border-radius: 3px; }
+  .card:hover { box-shadow: 0 8px 28px rgba(26,95,168,0.14), 0 2px 6px rgba(26,95,168,0.08); }
+  .card h2 { 
+    font-size: 16px; margin-bottom: 18px; color: #1a5fa8; 
+    display: flex; align-items: center; gap: 10px; font-weight: 800;
+    padding-bottom: 12px; border-bottom: 2px solid #EBF4FF;
+  }
+  .card h2::before { content:''; width:4px; height:20px; background: linear-gradient(180deg, #2980d4, #4AAEE0); border-radius: 3px; }
   
   /* === Buttons === */
   button.btn-primary {
