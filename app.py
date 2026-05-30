@@ -2819,7 +2819,7 @@ async function loadStats(period = 'week') {
   const periodLabel = {today:'今日',week:'本週',month:'本月'}[period];
   document.getElementById('statsNote').textContent = `顯示${periodLabel}資料`;
 
-  const scraperLabel = {ticsha:'台灣省工商安全衛生協會 (Ticsha)', cpc:'中國生產力中心 (CPC)', isha:'中華民國工業安全衛生協會 (ISHA)', cshm:'中國勞工安全衛生管理學會 (CSHM)'};
+  const scraperLabel = {ticsha:'台灣省工商安全衛生協會 (Ticsha)', cpc:'中國生產力中心 (CPC)', isha:'中華民國工業安全衛生協會 (ISHA)', cshm:'中國勞工安全衛生管理學會 (CSHM)', tete:'台灣能量輻射防護偵測有限公司 (TETE)'};
 
   // 登入次數表
   const loginRows = d.login_counts.map(r => `<tr><td>${r.username}</td><td style="text-align:center;">${r.cnt} 次</td></tr>`).join('') || '<tr><td colspan="2" style="color:#999;text-align:center;">無資料</td></tr>';
