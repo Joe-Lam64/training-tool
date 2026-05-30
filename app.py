@@ -3702,7 +3702,7 @@ function _normalizeHours(h) {
 function renderTable() {
   const kw = document.getElementById('searchKw').value.toLowerCase();
   const institute = document.getElementById('filterInstitute').value;
-  const cat = document.getElementById('filterCategory').value;
+  const selectedCategories = [...document.querySelectorAll('#categoryDropdown input[type=checkbox]:checked')].map(el => el.value);
   const nat = document.getElementById('filterNationality').value;
   const stat = document.getElementById('filterStatus').value;
   const cls = document.getElementById('filterClass').value;
