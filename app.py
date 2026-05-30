@@ -409,6 +409,7 @@ def get_course_outline(course_name, hours="3", category="複訓"):
 class TichaScraper:
     name = "台灣省工商安全衛生協會"
     code = "ticsha"
+    desc = "中壢・桃園・新竹 三個分會"
     branches = {
         "中壢": "https://cli.ticsha.org.tw/course_list",
         "桃園": "https://tyn.ticsha.org.tw/course_list",
@@ -651,6 +652,7 @@ class TichaScraper:
 class CPCScraper:
     name = "中國生產力中心"
     code = "cpc"
+    desc = "桃園・台北承德 / 職安・消防・營建 三類"
     base_url = "https://store.cpc.org.tw"
     # 3 個類別:職安(110) + 消防(111) + 營建(112)
     categories = {
@@ -964,6 +966,7 @@ class CPCScraper:
 class ISHAScraper:
     name = "中華民國工業安全衛生協會"
     code = "isha"
+    desc = "北區 5 個職訓中心：台北・新北・桃園・中壢・新竹"
     base_url = "https://isha.org.tw"
     list_url = "https://isha.org.tw/Msite/tech/serch.aspx"
     detail_url_tpl = "https://isha.org.tw/Msite/tech/serch_inner.aspx?WorkLogID={}"
@@ -1492,6 +1495,7 @@ class ISHAScraper:
 class CSHMScraper:
     name = "中國勞工安全衛生管理學會"
     code = "cshm"
+    desc = "台北・桃園・中壢 三個分會"
     base_url = "https://www.cshm.org.tw"
     # 只抓台北/桃園/中壢三區
     target_areas = {
@@ -1783,6 +1787,7 @@ class CSHMScraper:
 class TeteScraper:
     name = "台灣能量輻射防護偵測有限公司"
     code = "tete"
+    desc = "北部地區（台北・中壢），輻射類課程"
     _progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
 
     @classmethod
@@ -2136,6 +2141,18 @@ def index():
 def api_courses():
     return jsonify(load_data())
 
+
+@app.route("/api/scrapers")
+@login_required
+def api_scrapers():
+    result = []
+    for code, cls in scrapers.items():
+        result.append({
+            "code": code,
+            "name": cls.name,
+            "desc": getattr(cls, "desc", ""),
+        })
+    return jsonify(result)
 
 @app.route("/api/online")
 @login_required
