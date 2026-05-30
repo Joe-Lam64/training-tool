@@ -3934,10 +3934,15 @@ function statBadge(s) {
 }
 
 function toggleSel(id) {
+  const wasEmpty = selected.size === 0;
   if (selected.has(id)) selected.delete(id);
   else { const c = allCourses.find(x => x.id === id); if (c) selected.set(id, c); }
   renderTable();
   renderSelected();
+  // 第一次勾選時自動捲動到③
+  if (wasEmpty && selected.size === 1) {
+    document.getElementById('selectedList').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }
 
 function renderSelected() {
