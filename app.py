@@ -2998,7 +2998,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     display: flex; justify-content: space-between; align-items: center;
     box-shadow: 0 4px 16px rgba(44,82,130,0.3);
     position: sticky; top: 0; z-index: 100;
-    border-bottom: 3px solid #F6A623;
+    border-top: 4px solid #F6A623;
   }
   .header-left h1 { font-size: 22px; font-weight: 700; color: white; }
   .header-left .sub { font-size: 13px; opacity: 0.9; margin-top: 2px; color: #F6E8C0; }
@@ -3060,21 +3060,35 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   /* === Institute card (協會勾選) === */
   .inst-card {
     background: white;
-    border: 2.5px solid #B8CCE4;
+    border: 2px solid #C8DCF0;
     border-radius: 12px; padding: 14px 20px;
     display: flex; align-items: center; gap: 12px;
-    cursor: pointer; transition: all 0.15s;
+    cursor: pointer; transition: all 0.2s;
     user-select: none;
   }
-  .inst-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,200,150,0.2); }
+  .inst-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(44,82,130,0.15); }
   .inst-card.checked {
-    background: white;
-    border-color: #1B3F6E;
-    border-left: 5px solid #00C896;
+    background: linear-gradient(135deg, #2C5282 0%, #1a3a5c 100%);
+    border-color: #2C5282;
+    box-shadow: 0 4px 14px rgba(44,82,130,0.3);
   }
-  .inst-card input { width: 22px; height: 22px; cursor: pointer; accent-color: #1B3F6E; }
-  .inst-card .label { font-weight: 700; font-size: 14px; color: #0F1F2E; }
-  .inst-card .desc { font-size: 11px; color: #3D5A73; }
+  .inst-card.checked .label { color: white; }
+  .inst-card.checked .desc { color: #A8C8E8; }
+  .inst-card input { width: 22px; height: 22px; cursor: pointer; accent-color: #F6A623; }
+  .inst-card .label { font-weight: 700; font-size: 14px; color: #1A202C; }
+  .inst-card .desc { font-size: 11px; color: #4A6080; }
+
+  /* 各協會左側顏色 */
+  #instTicsha { border-left: 5px solid #3182CE; }
+  #instCpc    { border-left: 5px solid #38A169; }
+  #instIsha   { border-left: 5px solid #D69E2E; }
+  #instCshm   { border-left: 5px solid #805AD5; }
+  #instTete   { border-left: 5px solid #DD6B20; }
+  #instTicsha.checked { border-left: 5px solid #63B3ED; }
+  #instCpc.checked    { border-left: 5px solid #68D391; }
+  #instIsha.checked   { border-left: 5px solid #F6E05E; }
+  #instCshm.checked   { border-left: 5px solid #B794F4; }
+  #instTete.checked   { border-left: 5px solid #FBD38D; }
   
   /* === Inputs === */
   input[type=text], input[type=number], select {
