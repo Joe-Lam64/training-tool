@@ -3295,6 +3295,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </div>
         <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('cshm');" title="只更新此協會,不影響其他">🔄 只更新</button>
       </label>
+      <label class="inst-card checked" id="instTete" onclick="toggleInst('tete')">
+        <input type="checkbox" id="instCheckTete" checked>
+        <div style="flex:1;">
+          <div class="label">台灣能量輻射防護偵測有限公司 (TETE)</div>
+          <div class="desc">北部地區（台北・中壢），輻射類課程</div>
+        </div>
+        <button type="button" class="inst-update-btn" onclick="event.stopPropagation();event.preventDefault();updateOnly('tete');" title="只更新此協會,不影響其他">🔄 只更新</button>
+      </label>
       </div>
     <div style="background:#FFF3CD;border:2px solid #F4B860;border-radius:10px;padding:10px 16px;font-size:13px;color:#856404;line-height:1.6;margin-top:12px;">
       ⚠️ <b>請分開更新</b>，依序按各協會的「🔄 只更新」按鈕
