@@ -3354,13 +3354,17 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                 style="width:100%;padding:10px 14px;border:2px solid var(--line);border-radius:10px;background:var(--paper);text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
           🏷️ 複訓 (預設)
         </button>
-        <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
-          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="複訓" checked onchange="onCategoryChange()"> 複訓</label>
-          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="初訓" onchange="onCategoryChange()"> 初訓</label>
-          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="輻射" onchange="onCategoryChange()"> 輻射</label>
-          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="3小時輻射繼續教育積分班" onchange="onCategoryChange()"> 　↳ 3小時積分班</label>
-          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="18小時輻射操作人員訓練班" onchange="onCategoryChange()"> 　↳ 18小時訓練班</label>
-          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="36小時輻射操作人員訓練班" onchange="onCategoryChange()"> 　↳ 36小時訓練班</label>
+        <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;min-width:200px;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+          <div style="border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:6px;display:flex;gap:6px;">
+            <button onclick="selectAllCategories()" style="flex:1;background:var(--teal);color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">全選</button>
+            <button onclick="clearAllCategories()" style="flex:1;background:#ccc;color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">清除</button>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="複訓" checked onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 複訓</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="初訓" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 初訓</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="輻射" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> 輻射</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="3小時輻射繼續教育積分班" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 3小時積分班</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="18小時輻射操作人員訓練班" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 18小時訓練班</label>
+          <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;cursor:pointer;border-radius:6px;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background=''"><input type="checkbox" value="36小時輻射操作人員訓練班" onchange="onCategoryChange()" style="width:18px;height:18px;cursor:pointer;"> ↳ 36小時訓練班</label>
         </div>
       </div>
       <select id="filterNationality" onchange="renderTable()">
@@ -3541,6 +3545,16 @@ function toggleCategoryDropdown() {
   dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
 }
 
+function selectAllCategories() {
+  document.querySelectorAll('#categoryDropdown input[type=checkbox]').forEach(cb => { cb.checked = true; });
+  onCategoryChange();
+}
+
+function clearAllCategories() {
+  document.querySelectorAll('#categoryDropdown input[type=checkbox]').forEach(cb => { cb.checked = false; });
+  onCategoryChange();
+}
+
 function onCategoryChange() {
   const checked = [...document.querySelectorAll('#categoryDropdown input[type=checkbox]:checked')];
   const btn = document.getElementById('categoryToggleBtn');
@@ -3596,6 +3610,10 @@ document.addEventListener('click', function(e) {
   const box = document.getElementById('branchMultiBox');
   if (box && !box.contains(e.target)) {
     document.getElementById('branchDropdown').style.display = 'none';
+  }
+  const catBox = document.getElementById('categoryMultiBox');
+  if (catBox && !catBox.contains(e.target)) {
+    document.getElementById('categoryDropdown').style.display = 'none';
   }
 });
 
