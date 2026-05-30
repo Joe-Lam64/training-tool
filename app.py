@@ -2468,7 +2468,7 @@ ADMIN_TEMPLATE = r"""<!DOCTYPE html>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Microsoft JhengHei', sans-serif; background: #F0F8FF; min-height: 100vh; }
-.header { background: linear-gradient(135deg, #A8D8EA, #B5EAD7); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
+.header { background: linear-gradient(135deg, #D6E4E8, #D4E8DF); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
 .header h1 { font-size: 22px; font-weight: 700; color: #2C3E50; }
 .back-btn { background: white; border: none; color: #3F72AF; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600; }
 .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
@@ -2855,16 +2855,16 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --sky: #A8D8EA;       /* 淡天藍 */
-    --mint: #B5EAD7;      /* 淡薄荷 */
-    --lavender: #DCD3FF;  /* 淡薰衣草 */
-    --blue: #3F72AF;      /* 主藍 */
-    --teal: #4FB3BF;      /* 主青 */
-    --warm: #FFF4E6;      /* 暖背景 */
-    --paper: #FAFCFE;
-    --ink: #2C3E50;
-    --ink-soft: #5B7080;
-    --line: #E5EEF4;
+    --sky: #D6E4E8;       /* 低飽和灰藍 */
+    --mint: #D4E8DF;      /* 低飽和灰綠 */
+    --lavender: #E0DCF0;  /* 低飽和灰紫 */
+    --blue: #4A6FA5;      /* 柔和藍 */
+    --teal: #5A9E8F;      /* 柔和青綠 */
+    --warm: #F7F5F0;      /* 暖米白背景 */
+    --paper: #F5F5F0;     /* 主背景暖米白 */
+    --ink: #333333;       /* 深灰文字(非純黑) */
+    --ink-soft: #666666;  /* 中灰輔助文字 */
+    --line: #E8E8E4;      /* 暖灰分隔線 */
   }
   body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; }
   
@@ -2873,7 +2873,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     background: linear-gradient(135deg, var(--sky) 0%, var(--mint) 100%);
     color: var(--ink); padding: 14px 28px;
     display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 2px 12px rgba(100,160,200,0.15);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     position: sticky; top: 0; z-index: 100;
   }
   .header-left h1 { font-size: 22px; font-weight: 700; }
