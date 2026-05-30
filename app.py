@@ -3059,30 +3059,30 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   /* === Institute card (協會勾選) === */
   .inst-card {
     background: white;
-    border: 2.5px solid var(--sky);
+    border: 2.5px solid #B8CCE4;
     border-radius: 12px; padding: 14px 20px;
     display: flex; align-items: center; gap: 12px;
     cursor: pointer; transition: all 0.15s;
     user-select: none;
   }
-  .inst-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(27,63,110,0.15); }
+  .inst-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,200,150,0.2); }
   .inst-card.checked {
     background: white;
-    border-color: var(--blue);
-    border-left: 5px solid var(--teal);
+    border-color: #1B3F6E;
+    border-left: 5px solid #00C896;
   }
-  .inst-card input { width: 22px; height: 22px; cursor: pointer; accent-color: var(--blue); }
-  .inst-card .label { font-weight: 600; font-size: 14px; color: #0F1F2E; }
+  .inst-card input { width: 22px; height: 22px; cursor: pointer; accent-color: #1B3F6E; }
+  .inst-card .label { font-weight: 700; font-size: 14px; color: #0F1F2E; }
   .inst-card .desc { font-size: 11px; color: #3D5A73; }
   
   /* === Inputs === */
   input[type=text], input[type=number], select {
-    padding: 10px 14px; border: 2px solid var(--line); border-radius: 10px;
-    font-family: inherit; font-size: 14px; background: var(--paper);
+    padding: 10px 14px; border: 2px solid #B8CCE4; border-radius: 10px;
+    font-family: inherit; font-size: 14px; background: white; color: #0F1F2E;
     transition: border-color 0.15s;
   }
-  input:focus, select:focus { outline: none; border-color: var(--teal); background: white; }
-  label { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+  input:focus, select:focus { outline: none; border-color: #00C896; background: white; }
+  label { font-size: 13px; color: #0F1F2E; font-weight: 600; }
   
   /* === Badges === */
   .badge { display: inline-block; padding: 4px 11px; border-radius: 14px; font-size: 11px; font-weight: 700; }
@@ -3344,7 +3344,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <select id="filterBranch" onchange="renderTable()" style="display:none;"><option value="">全部分會</option></select>
       <div id="branchMultiBox" style="position:relative;">
         <button type="button" onclick="toggleBranchDropdown()" id="branchToggleBtn"
-                style="width:100%;padding:10px 14px;border:2px solid var(--line);border-radius:10px;background:var(--paper);text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
+                style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
           📍 全部分會
         </button>
         <div id="branchDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-height:240px;overflow-y:auto;">
@@ -3353,7 +3353,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       </div>
       <div id="categoryMultiBox" style="position:relative;">
         <button type="button" onclick="toggleCategoryDropdown()" id="categoryToggleBtn"
-                style="width:100%;padding:10px 14px;border:2px solid var(--line);border-radius:10px;background:var(--paper);text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
+                style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
           🏷️ 複訓 (預設)
         </button>
         <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;min-width:200px;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
