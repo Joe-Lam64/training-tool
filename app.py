@@ -1906,6 +1906,7 @@ SCRAPERS = {    "ticsha": TichaScraper,
     "cpc": CPCScraper,
     "isha": ISHAScraper,
     "cshm": CSHMScraper,
+    "tete": TeteScraper,
 }
 
 def load_data():
