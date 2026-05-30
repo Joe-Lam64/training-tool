@@ -3873,6 +3873,7 @@ function renderTable() {
 function catBadge(c) {
   if (c === '初訓') return '<span class="badge badge-cat-init">初訓</span>';
   if (c === '複訓') return '<span class="badge badge-cat-re">複訓</span>';
+  if (c === '輻射') return '<span class="badge" style="background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;">☢ 輻射</span>';
   return `<span class="badge badge-other">${c||'?'}</span>`;
 }
 function natBadge(n) {
