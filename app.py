@@ -3339,11 +3339,20 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           <div id="branchOptions"></div>
         </div>
       </div>
-      <select id="filterCategory" onchange="renderTable()">
-        <option value="複訓" selected>複訓 (預設)</option>
-        <option value="初訓">初訓</option>
-        <option value="">全部類別</option>
-      </select>
+      <div id="categoryMultiBox" style="position:relative;">
+        <button type="button" onclick="toggleCategoryDropdown()" id="categoryToggleBtn"
+                style="width:100%;padding:10px 14px;border:2px solid var(--line);border-radius:10px;background:var(--paper);text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
+          🏷️ 複訓 (預設)
+        </button>
+        <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="複訓" checked onchange="onCategoryChange()"> 複訓</label>
+          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="初訓" onchange="onCategoryChange()"> 初訓</label>
+          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="輻射" onchange="onCategoryChange()"> 輻射</label>
+          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="3小時輻射繼續教育積分班" onchange="onCategoryChange()"> 　↳ 3小時積分班</label>
+          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="18小時輻射操作人員訓練班" onchange="onCategoryChange()"> 　↳ 18小時訓練班</label>
+          <label style="display:block;padding:4px 0;cursor:pointer;"><input type="checkbox" value="36小時輻射操作人員訓練班" onchange="onCategoryChange()"> 　↳ 36小時訓練班</label>
+        </div>
+      </div>
       <select id="filterNationality" onchange="renderTable()">
         <option value="本國籍" selected>只要本國籍 (預設)</option>
         <option value="">全部 (含外籍)</option>
