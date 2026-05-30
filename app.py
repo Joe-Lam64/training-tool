@@ -1780,6 +1780,128 @@ class CSHMScraper:
         return all_courses
 
 
+class TeteScraper:
+    name = "台灣能量輻射防護偵測有限公司"
+    code = "tete"
+    _progress = {"stage": "idle", "current": 0, "total": 0, "message": ""}
+
+    @classmethod
+    def get_progress(cls):
+        return cls._progress.copy()
+
+    @classmethod
+    def scrape(cls, fetch_details=True):
+        import requests
+        from bs4 import BeautifulSoup
+        import re
+
+        base_url = "https://www.tete.url.tw"
+        courses = []
+
+        # 列表頁設定：(課程名稱, 小時數, 列表頁URL)
+        list_pages = [
+            ("3小時輻射繼續教育積分班", 3, f"{base_url}/custom_cg54564.html"),
+            ("18小時輻射操作人員訓練班", 18, f"{base_url}/custom_cg54566.html"),
+            ("36小時輻射操作人員訓練班", 36, f"{base_url}/custom_cg54991.html"),
+        ]
+
+        cls._progress["stage"] = "listing"
+        cls._progress["message"] = "抓取課程列表中..."
+        cls._progress["total"] = len(list_pages)
+        cls._progress["current"] = 0
+
+        detail_links = []  # [(課程名, 小時數, 詳細頁URL)]
+
+        for course_name, hours, list_url in list_pages:
+            try:
+                r = requests.get(list_url, timeout=15)
+                r.encoding = "utf-8"
+                soup = BeautifulSoup(r.text, "html.parser")
+                for h3 in soup.select("h3 a[href]"):
+                    href = h3["href"]
+                    if not href.startswith("http"):
+                        href = base_url + "/" + href.lstrip("/")
+                    detail_links.append((course_name, hours, href, h3.get_text(strip=True)))
+            except Exception as e:
+                print(f"[TeteScraper] 列表頁失敗 {list_url}: {e}")
+            cls._progress["current"] += 1
+
+        cls._progress["stage"] = "details"
+        cls._progress["total"] = len(detail_links)
+        cls._progress["current"] = 0
+        cls._progress["message"] = f"抓取課程詳細頁（共 {len(detail_links)} 筆）..."
+
+        for course_name, hours, detail_url, title_text in detail_links:
+            try:
+                r = requests.get(detail_url, timeout=15)
+                r.encoding = "utf-8"
+                soup = BeautifulSoup(r.text, "html.parser")
+                full_text = soup.get_text(separator="\n")
+
+                # 解析日期（從標題文字，如「115年06月26日」）
+                date_match = re.search(r'(\d{2,3})年(\d{2})月(\d{2})日', title_text)
+                if date_match:
+                    year = int(date_match.group(1)) + 1911
+                    month = date_match.group(2)
+                    day = date_match.group(3)
+                    start_date = f"{year}-{month}-{day}"
+                else:
+                    start_date = ""
+
+                # 結束日期（多日課程，如「06月22日~23日」）
+                end_match = re.search(r'~(\d{2})日', title_text)
+                if end_match and date_match:
+                    end_day = end_match.group(1).zfill(2)
+                    end_date = f"{year}-{month}-{end_day}"
+                else:
+                    end_date = start_date
+
+                # 地點（從「上課地點：」後抓第一行地址）
+                loc_match = re.search(r'上課地點[：:]\s*\n?\s*(.+)', full_text)
+                location = loc_match.group(1).strip() if loc_match else ""
+
+                # 分會（從標題括號判斷）
+                if "台北" in title_text:
+                    branch = "台北"
+                elif "中壢" in title_text:
+                    branch = "中壢"
+                else:
+                    branch = "北部"
+
+                # 費用（取第一個數字）
+                fee_match = re.search(r'每人(\d+)元', full_text)
+                fee = int(fee_match.group(1)) if fee_match else 0
+
+                course_id = detail_url.split("_")[-1].replace(".html", "")
+
+                courses.append({
+                    "institute": cls.name,
+                    "id": f"tete_{course_id}",
+                    "code": cls.code,
+                    "name": course_name,
+                    "branch": branch,
+                    "category": "輻射",
+                    "nationality": "本國",
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "class_type": "",
+                    "class_time": "上午班(時間待通知)",
+                    "hours": hours,
+                    "fee": fee,
+                    "status": "確定開班",
+                    "register_url": detail_url,
+                    "location": location,
+                    "source": list_url if "54564" in detail_url or "54566" in detail_url or "54991" in detail_url else detail_url,
+                })
+            except Exception as e:
+                print(f"[TeteScraper] 詳細頁失敗 {detail_url}: {e}")
+            cls._progress["current"] += 1
+
+        cls._progress["stage"] = "done"
+        cls._progress["message"] = f"完成，共 {len(courses)} 筆"
+        return courses
+
+
 SCRAPERS = {    "ticsha": TichaScraper,
     "cpc": CPCScraper,
     "isha": ISHAScraper,
