@@ -3076,13 +3076,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Institute update button (commit 15: 單獨更新此協會) === */
   .inst-update-btn {
-    background: white; color: var(--blue); border: 1.5px solid var(--blue);
-    padding: 6px 12px; font-family: inherit; font-size: 11px; font-weight: 700;
-    border-radius: 8px; cursor: pointer; flex-shrink: 0; white-space: nowrap;
-    transition: all 0.15s;
+    background: linear-gradient(135deg, #2980d4, #4AAEE0);
+    color: white; border: none;
+    padding: 10px 18px; font-family: inherit; font-size: 13px; font-weight: 700;
+    border-radius: 12px; cursor: pointer; flex-shrink: 0; white-space: nowrap;
+    transition: all 0.2s; box-shadow: 0 3px 10px rgba(41,128,212,0.3);
   }
   .inst-update-btn:hover {
-    background: var(--blue); color: white; transform: translateY(-1px);
+    background: linear-gradient(135deg, #1a6bb5, #2980d4);
+    transform: translateY(-2px); box-shadow: 0 5px 14px rgba(41,128,212,0.4);
   }
 
   /* === Institute card (協會勾選) === */
