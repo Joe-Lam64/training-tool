@@ -198,12 +198,24 @@ def init_db():
 
 
 def verify_user(username, password):
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
-    row = cur.fetchone()
-    conn.close()
+    conn = _pg_conn()
+    if conn:
+        try:
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
+            row = cur.fetchone()
+            return dict(row) if row else None
+        except Exception as e:
+            print(f"[PG] verify_user 失敗: {e}")
+        finally:
+            conn.close()
+    # fallback: SQLite
+    conn2 = sqlite3.connect(DB_FILE)
+    conn2.row_factory = sqlite3.Row
+    cur2 = conn2.cursor()
+    cur2.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+    row = cur2.fetchone()
+    conn2.close()
     return dict(row) if row else None
 
 
@@ -2000,12 +2012,18 @@ def api_change_display_name():
     new_name = body.get("display_name", "").strip()
     if not target or not new_name:
         return jsonify({"ok": False, "error": "請填寫完整"})
-    conn = sqlite3.connect(DB_FILE)
-    cur = conn.cursor()
-    cur.execute("UPDATE users SET display_name=? WHERE username=?", (new_name, target))
-    conn.commit()
-    conn.close()
-    return jsonify({"ok": True})
+    conn = _pg_conn()
+    if not conn:
+        return jsonify({"ok": False, "error": "資料庫無連線"})
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET display_name=%s WHERE username=%s", (new_name, target))
+        conn.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+    finally:
+        conn.close()
 
 
 @app.route("/api/admin/list_users")
@@ -2013,13 +2031,18 @@ def api_change_display_name():
 def api_list_users():
     if session["user"]["role"] != "admin":
         return jsonify({"ok": False, "error": "無權限"}), 403
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row
-    cur = conn.cursor()
-    cur.execute("SELECT username, role, display_name FROM users ORDER BY id")
-    rows = [dict(r) for r in cur.fetchall()]
-    conn.close()
-    return jsonify({"ok": True, "users": rows})
+    conn = _pg_conn()
+    if not conn:
+        return jsonify({"ok": False, "error": "資料庫無連線"})
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT username, role, display_name FROM users ORDER BY id")
+        rows = [dict(r) for r in cur.fetchall()]
+        return jsonify({"ok": True, "users": rows})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+    finally:
+        conn.close()
 
 
 @app.route("/api/admin/add_user", methods=["POST"])
@@ -2035,16 +2058,21 @@ def api_add_user():
         return jsonify({"ok": False, "error": "請填寫完整"})
     if len(password) < 4:
         return jsonify({"ok": False, "error": "密碼至少 4 個字元"})
+    conn = _pg_conn()
+    if not conn:
+        return jsonify({"ok": False, "error": "資料庫無連線"})
     try:
-        conn = sqlite3.connect(DB_FILE)
         cur = conn.cursor()
-        cur.execute("INSERT INTO users (username, password, role, display_name, created_at) VALUES (?, ?, 'user', ?, ?)",
+        cur.execute("INSERT INTO users (username, password, role, display_name, created_at) VALUES (%s, %s, 'user', %s, %s)",
                     (username, password, display_name, datetime.now().isoformat()))
         conn.commit()
-        conn.close()
         return jsonify({"ok": True})
-    except sqlite3.IntegrityError:
-        return jsonify({"ok": False, "error": f"帳號 {username} 已存在"})
+    except Exception as e:
+        if "unique" in str(e).lower():
+            return jsonify({"ok": False, "error": f"帳號 {username} 已存在"})
+        return jsonify({"ok": False, "error": str(e)})
+    finally:
+        conn.close()
 
 
 @app.route("/api/admin/delete_user", methods=["POST"])
@@ -2056,18 +2084,22 @@ def api_delete_user():
     username = body.get("username", "").strip()
     if username == "train0":
         return jsonify({"ok": False, "error": "不能刪除管理員帳號"})
-    conn = sqlite3.connect(DB_FILE)
-    cur = conn.cursor()
-    cur.execute("DELETE FROM users WHERE username=?", (username,))
-    conn.commit()
-    conn.close()
-    # 強制登出該使用者
+    conn = _pg_conn()
+    if not conn:
+        return jsonify({"ok": False, "error": "資料庫無連線"})
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM users WHERE username=%s", (username,))
+        conn.commit()
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+    finally:
+        conn.close()
     with ONLINE_LOCK:
         for key in list(ONLINE_USERS.keys()):
             u, _ = key.split("|", 1) if "|" in key else (key, "?")
             if u == username:
                 del ONLINE_USERS[key]
-    # 加入黑名單，使該帳號現有 session 失效
     with FORCE_LOGOUT_LOCK:
         FORCE_LOGOUT[username] = time.time()
     return jsonify({"ok": True})
