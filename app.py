@@ -3169,8 +3169,18 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     border: 1px solid rgba(255,255,255,0.8);
     box-shadow: 0 2px 12px rgba(26,95,168,0.08);
   }
-  .stat { font-size: 13px; color: var(--ink-soft); margin-bottom: 10px; }
-  .stat strong { color: var(--teal); font-weight: 700; font-size: 18px; }
+  .stat { 
+    font-size: 13px; color: #4A7BA7; margin-bottom: 12px;
+    background: rgba(255,255,255,0.6);
+    backdrop-filter: blur(8px);
+    padding: 10px 16px; border-radius: 12px;
+    border: 1px solid rgba(74,144,217,0.15);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .stat strong { 
+    color: #1a5fa8; font-weight: 800; font-size: 20px;
+    text-shadow: 0 1px 2px rgba(26,95,168,0.15);
+  }
   
   .table-wrap {
     max-height: 480px; overflow-y: auto;
