@@ -2993,14 +2993,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Header === */
   .header {
-    background: linear-gradient(135deg, var(--sky) 0%, var(--mint) 100%);
-    color: var(--ink); padding: 14px 28px;
+    background: linear-gradient(135deg, #1a3a5c 0%, #1e5f52 100%);
+    color: white; padding: 14px 28px;
     display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     position: sticky; top: 0; z-index: 100;
   }
-  .header-left h1 { font-size: 22px; font-weight: 700; }
-  .header-left .sub { font-size: 13px; opacity: 0.75; margin-top: 2px; }
+  .header-left h1 { font-size: 22px; font-weight: 700; color: white; }
+  .header-left .sub { font-size: 13px; opacity: 0.85; margin-top: 2px; color: #B8D8DC; }
   .header-right { display: flex; align-items: center; gap: 14px; }
   .header-stat {
     background: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px;
