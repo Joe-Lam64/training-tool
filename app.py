@@ -2591,8 +2591,8 @@ ADMIN_TEMPLATE = r"""<!DOCTYPE html>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Microsoft JhengHei', sans-serif; background: #F0F8FF; min-height: 100vh; }
-.header { background: linear-gradient(135deg, #D6E4E8, #D4E8DF); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { font-size: 22px; font-weight: 700; color: #2C3E50; }
+.header { background: linear-gradient(120deg, #1a5fa8 0%, #4AAEE0 100%); padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 3px 12px rgba(26,95,168,0.25); }
+.header h1 { font-size: 22px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 .back-btn { background: white; border: none; color: #3F72AF; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 600; }
 .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
 .card { background: white; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(160,180,200,0.12); }
@@ -3019,23 +3019,26 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   }
   .header-stat strong { color: white; font-weight: 800; font-size: 15px; }
   .user-info { 
-    font-size: 14px; background: rgba(255,255,255,0.18); 
+    font-size: 14px; background: rgba(255,255,255,0.25); 
     padding: 7px 14px; border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.25);
-    color: white;
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white; font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
   }
-  .user-info .name { font-weight: 700; color: white; }
+  .user-info .name { font-weight: 800; color: white; }
   .user-info .role { 
-    background: rgba(255,255,255,0.3); color: white; 
-    padding: 2px 10px; border-radius: 10px; font-size: 12px; margin-left: 6px; 
+    background: rgba(255,255,255,0.4); color: white; 
+    padding: 2px 10px; border-radius: 10px; font-size: 12px; margin-left: 6px;
+    font-weight: 700;
   }
   .logout-btn {
-    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); 
+    background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); 
     color: white; padding: 8px 18px;
     font-family: inherit; font-size: 14px; border-radius: 20px; cursor: pointer;
-    font-weight: 600; transition: all 0.2s;
+    font-weight: 700; transition: all 0.2s;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
   }
-  .logout-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
+  .logout-btn:hover { background: rgba(255,255,255,0.38); transform: translateY(-1px); }
   
   .container { max-width: 1400px; margin: 0 auto; padding: 20px 40px; }
   
