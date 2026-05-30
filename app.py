@@ -3165,9 +3165,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     background: rgba(255,255,255,0.5);
     backdrop-filter: blur(8px);
     border-radius: 16px;
-    padding: 12px;
+    padding: 12px 14px;
     border: 1px solid rgba(255,255,255,0.8);
     box-shadow: 0 2px 12px rgba(26,95,168,0.08);
+    overflow: visible;
   }
   .stat { 
     font-size: 13px; color: #4A7BA7; margin-bottom: 12px;
@@ -3189,7 +3190,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   
   /* === Sticky header (第 4 點) === */
-  thead { position: sticky; top: 0; z-index: 10; }
+  thead { position: sticky; top: 0; z-index: 5; }
   thead tr { background: var(--blue) !important; }
   th {
     padding: 12px 8px; text-align: left; font-weight: 700;
@@ -3425,7 +3426,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                 style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
           📍 全部分會
         </button>
-        <div id="branchDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:200;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-height:240px;overflow-y:auto;">
+        <div id="branchDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);max-height:240px;overflow-y:auto;">
           <div id="branchOptions"></div>
         </div>
       </div>
@@ -3434,7 +3435,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
                 style="width:100%;padding:10px 14px;border:2px solid #B8CCE4;border-radius:10px;background:white;color:#0F1F2E;text-align:left;cursor:pointer;font-family:inherit;font-size:14px;">
           🏷️ 複訓 (預設)
         </button>
-        <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;min-width:200px;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:200;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+        <div id="categoryDropdown" style="display:none;position:absolute;top:100%;left:0;min-width:200px;background:white;border:2px solid var(--teal);border-radius:10px;margin-top:4px;padding:10px;z-index:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
           <div style="border-bottom:1px solid #eee;padding-bottom:6px;margin-bottom:6px;display:flex;gap:6px;">
             <button onclick="selectAllCategories()" style="flex:1;background:var(--teal);color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">全選</button>
             <button onclick="clearAllCategories()" style="flex:1;background:#ccc;color:white;border:none;padding:5px;border-radius:5px;cursor:pointer;font-size:12px;">清除</button>
