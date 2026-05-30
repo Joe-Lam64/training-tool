@@ -2985,11 +2985,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     --teal: #00C896;      /* 極光綠主色 */
     --warm: #0D1B2A;      /* 深空背景 */
     --paper: #0D1B2A;     /* 主背景深空藍 */
-    --ink: #E8F4FD;       /* 星光白文字 */
-    --ink-soft: #A0BDD0;  /* 淡藍輔助文字 */
+    --ink: #0F1F2E;       /* 深藍文字 */
+    --ink-soft: #3D5A73;  /* 中藍輔助文字 */
     --line: #1E3A5F;      /* 深藍分隔線 */
   }
-  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #0D1B2A 0%, #1B2A4A 60%, #0D2A1E 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
+  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #1C3557 0%, #1A4A6E 50%, #1A3D4A 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
   
   /* === Header === */
   .header {
@@ -3023,12 +3023,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   
   /* === Cards === */
   .card {
-    background: rgba(255,255,255,0.06); border-radius: 14px; padding: 22px; margin-bottom: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3); border: 1px solid rgba(126,200,227,0.2);
-    backdrop-filter: blur(8px);
+    background: rgba(255,255,255,0.92); border-radius: 14px; padding: 22px; margin-bottom: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2); border: 1px solid rgba(126,200,227,0.3);
   }
-  .card h2 { font-size: 16px; margin-bottom: 16px; color: #7EC8E3; display: flex; align-items: center; gap: 10px; font-weight: 700; }
-  .card h2::before { content:''; width:5px; height:20px; background: var(--teal); border-radius: 3px; }
+  .card h2 { font-size: 16px; margin-bottom: 16px; color: #1B3F6E; display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .card h2::before { content:''; width:5px; height:20px; background: #00C896; border-radius: 3px; }
   
   /* === Buttons === */
   button.btn-primary {
