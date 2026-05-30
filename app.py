@@ -2146,7 +2146,7 @@ def api_courses():
 @login_required
 def api_scrapers():
     result = []
-    for code, cls in scrapers.items():
+    for code, cls in SCRAPERS.items():
         result.append({
             "code": code,
             "name": cls.name,
