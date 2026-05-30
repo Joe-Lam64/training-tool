@@ -2002,6 +2002,32 @@ def admin_page():
 
 
 
+@app.route("/api/admin/change_password", methods=["POST"])
+@login_required
+def api_change_password():
+    if session["user"]["role"] != "admin":
+        return jsonify({"ok": False, "error": "無權限"}), 403
+    body = request.get_json() or {}
+    target = body.get("username", "").strip()
+    new_pw = body.get("new_password", "").strip()
+    if not target or not new_pw:
+        return jsonify({"ok": False, "error": "請填寫完整"})
+    if len(new_pw) < 4:
+        return jsonify({"ok": False, "error": "密碼至少 4 個字元"})
+    conn = _pg_conn()
+    if not conn:
+        return jsonify({"ok": False, "error": "資料庫無連線"})
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE users SET password=%s WHERE username=%s", (new_pw, target))
+        conn.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+    finally:
+        conn.close()
+
+
 @app.route("/api/admin/change_display_name", methods=["POST"])
 @login_required
 def api_change_display_name():
@@ -2443,8 +2469,8 @@ input:focus { outline: none; border-color: #4FB3BF; }
 <body>
 <div class="header">
   <div style="display:flex;flex-direction:column;gap:4px;">
-    <div style="font-size:13px;color:#5B7080;display:flex;align-items:center;gap:6px;">
-      <a href="/" style="color:#3F72AF;font-weight:600;text-decoration:none;">📚 外訓課程整合管理系統</a>
+    <div style="font-size:17px;color:#5B7080;display:flex;align-items:center;gap:8px;">
+      <a href="/" style="color:#3F72AF;font-weight:700;text-decoration:none;">📚 外訓課程整合管理系統</a>
       <span style="color:#AAB8C2;">/</span>
       <span style="color:#AAB8C2;font-weight:600;">⚙️ 後台管理</span>
     </div>
@@ -2542,7 +2568,11 @@ async function loadUsers() {
         <button class="btn btn-blue" onclick="changeName('${u.username}')">改名稱</button>
         <span class="msg" id="nameMsg_${u.username}"></span>
       </div>
-      
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <input type="password" id="pw_${u.username}" placeholder="新密碼">
+        <button class="btn btn-blue" onclick="changePw('${u.username}')">改密碼</button>
+        <span class="msg" id="pwMsg_${u.username}"></span>
+      </div>
       ${u.role !== 'admin' ? `<button class="btn btn-red" onclick="deleteUser('${u.username}', '${u.display_name}')">🗑 刪除</button>` : ''}
     </div>
   `).join('');
@@ -2554,6 +2584,20 @@ async function loadUsers() {
 }
 
 
+
+async function changePw(username) {
+  const pw = document.getElementById('pw_' + username).value.trim();
+  const msg = document.getElementById('pwMsg_' + username);
+  if (!pw) { msg.textContent = '請輸入新密碼'; msg.className = 'msg err'; return; }
+  const r = await fetch('/api/admin/change_password', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({username, new_password: pw})
+  });
+  const d = await r.json();
+  msg.textContent = d.ok ? '✓ 已更新' : ('✗ ' + d.error);
+  msg.className = 'msg ' + (d.ok ? 'ok' : 'err');
+  if (d.ok) document.getElementById('pw_' + username).value = '';
+}
 
 async function changeName(username) {
   const name = document.getElementById('name_' + username).value.trim();
