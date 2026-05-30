@@ -1787,6 +1787,19 @@ SCRAPERS = {    "ticsha": TichaScraper,
 }
 
 def load_data():
+    conn = _pg_conn()
+    if conn:
+        try:
+            cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute("SELECT courses, last_updated FROM course_cache WHERE id=1")
+            row = cur.fetchone()
+            if row and row["courses"]:
+                return {"courses": row["courses"], "last_updated": row["last_updated"]}
+        except Exception as e:
+            print(f"[PG] load_data 失敗: {e}")
+        finally:
+            conn.close()
+    # fallback: 本地 JSON
     if DATA_FILE.exists():
         with open(DATA_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -1794,6 +1807,22 @@ def load_data():
 
 
 def save_data(data):
+    conn = _pg_conn()
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("""
+                INSERT INTO course_cache (id, courses, last_updated)
+                VALUES (1, %s::JSONB, %s)
+                ON CONFLICT (id) DO UPDATE SET courses=EXCLUDED.courses, last_updated=EXCLUDED.last_updated
+            """, (json.dumps(data["courses"], ensure_ascii=False), data.get("last_updated")))
+            conn.commit()
+            print(f"[PG] 課程資料已存入 Supabase ({len(data['courses'])} 筆)")
+        except Exception as e:
+            print(f"[PG] save_data 失敗: {e}")
+        finally:
+            conn.close()
+    # 同時存本地備份
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
