@@ -3718,7 +3718,11 @@ function renderTable() {
   } else {
     visible = [];
   }
-  if (cat) visible = visible.filter(c => c.category === cat);
+  if (selectedCategories.length > 0) {
+      visible = visible.filter(c => 
+        selectedCategories.includes(c.category) || selectedCategories.includes(c.name)
+      );
+    }
   if (nat) visible = visible.filter(c => c.nationality === nat);
   if (stat === 'open') visible = visible.filter(c => /確定開班|招生|強力/.test(c.status));
   if (stat === 'full') visible = visible.filter(c => /額滿/.test(c.status));
