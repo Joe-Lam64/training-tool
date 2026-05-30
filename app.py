@@ -2978,36 +2978,36 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --sky: #BDD9EF;       /* 天空藍淡 */
-    --mint: #C8E6C9;      /* 清新綠淡 */
-    --gold: #F6A623;      /* 金黃強調 */
-    --blue: #3A7BD5;      /* 天空藍主色 */
-    --teal: #5BA3C9;      /* 天空藍輔色 */
-    --warm: #F0F6FF;      /* 清晨天空背景 */
-    --paper: #EEF4FA;     /* 主背景淡藍 */
-    --ink: #1A202C;       /* 深藍灰文字 */
-    --ink-soft: #4A6080;  /* 中藍輔助文字 */
-    --line: #C8DCF0;      /* 藍灰分隔線 */
+    --sky: #BEE3F8;       /* 清晨淡藍 */
+    --mint: #EBF8FF;      /* 極淡藍白 */
+    --gold: #63B3ED;      /* 天空藍強調 */
+    --blue: #2B6CB0;      /* 中藍主色 */
+    --teal: #4A90D9;      /* 天空藍輔色 */
+    --warm: #F0F7FF;      /* 清晨背景 */
+    --paper: #EEF5FD;     /* 主背景淡藍白 */
+    --ink: #2D3748;       /* 深灰藍文字 */
+    --ink-soft: #4A7BA7;  /* 中藍灰輔助 */
+    --line: #BEE3F8;      /* 極淡藍分隔線 */
   }
-  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #EEF5FB 0%, #E8F2F8 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
+  body { font-family: 'Microsoft JhengHei', sans-serif; background: linear-gradient(160deg, #F0F7FF 0%, #E8F4FD 100%); color: var(--ink); min-height: 100vh; background-attachment: fixed; }
   
   /* === Header === */
   .header {
-    background: linear-gradient(135deg, #3A7BD5 0%, #5BA3C9 100%);
+    background: linear-gradient(135deg, #4A90D9 0%, #63B3ED 100%);
     color: white; padding: 14px 28px;
     display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 3px 12px rgba(58,123,213,0.25);
+    box-shadow: 0 3px 14px rgba(74,144,217,0.3);
     position: sticky; top: 0; z-index: 100;
   }
   .header-left h1 { font-size: 22px; font-weight: 700; color: white; }
-  .header-left .sub { font-size: 13px; opacity: 0.85; margin-top: 2px; color: #D6EEFF; }
+  .header-left .sub { font-size: 13px; opacity: 0.9; margin-top: 2px; color: #D6EEFF; }
   .header-right { display: flex; align-items: center; gap: 14px; }
   .header-stat {
-    background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px;
-    font-size: 14px; color: white; border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.22); padding: 8px 16px; border-radius: 8px;
+    font-size: 14px; color: white; border: 1px solid rgba(255,255,255,0.4);
     display: flex; align-items: center; gap: 6px;
   }
-  .header-stat strong { color: white; font-weight: 700; font-size: 16px; }
+  .header-stat strong { color: #FFF9C4; font-weight: 700; font-size: 16px; }
   .user-info { font-size: 15px; background: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 8px; }
   .user-info .name { font-weight: 700; color: var(--blue); }
   .user-info .role { background: var(--blue); color: white; padding: 3px 10px; border-radius: 10px; font-size: 13px; margin-left: 6px; }
@@ -3023,11 +3023,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   /* === Cards === */
   .card {
     background: white; border-radius: 14px; padding: 22px; margin-bottom: 16px;
-    box-shadow: 0 3px 16px rgba(44,82,130,0.1); border: 1px solid #C8DCF0;
-    border-left: 4px solid #F6A623;
+    box-shadow: 0 2px 12px rgba(74,144,217,0.1); border: 1px solid #BEE3F8;
   }
-  .card h2 { font-size: 16px; margin-bottom: 16px; color: #3A7BD5; display: flex; align-items: center; gap: 10px; font-weight: 700; }
-  .card h2::before { content:''; width:5px; height:20px; background: #3A7BD5; border-radius: 3px; }
+  .card h2 { font-size: 16px; margin-bottom: 16px; color: #2B6CB0; display: flex; align-items: center; gap: 10px; font-weight: 700; }
+  .card h2::before { content:''; width:5px; height:20px; background: #4A90D9; border-radius: 3px; }
   
   /* === Buttons === */
   button.btn-primary {
@@ -3067,13 +3066,13 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   }
   .inst-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(44,82,130,0.15); }
   .inst-card.checked {
-    background: linear-gradient(135deg, #2C5282 0%, #1a3a5c 100%);
-    border-color: #2C5282;
-    box-shadow: 0 4px 14px rgba(44,82,130,0.3);
+    background: #EBF8FF;
+    border-color: #4A90D9;
+    box-shadow: 0 4px 14px rgba(74,144,217,0.2);
   }
-  .inst-card.checked .label { color: white; }
-  .inst-card.checked .desc { color: #A8C8E8; }
-  .inst-card input { width: 22px; height: 22px; cursor: pointer; accent-color: #F6A623; }
+  .inst-card.checked .label { color: #2B6CB0; }
+  .inst-card.checked .desc { color: #4A7BA7; }
+  .inst-card input { width: 22px; height: 22px; cursor: pointer; accent-color: #4A90D9; }
   .inst-card .label { font-weight: 700; font-size: 14px; color: #1A202C; }
   .inst-card .desc { font-size: 11px; color: #4A6080; }
 
