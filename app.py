@@ -2673,9 +2673,9 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
 
   <!-- tab 導航 -->
   <div style="display:flex;gap:8px;margin-bottom:20px;">
-    <button class="tab-btn active" id="tab-stats" onclick="switchtab('stats')">📊 使用統計</button>
-    <button class="tab-btn" id="tab-online" onclick="switchtab('online')">🟢 在線狀態</button>
-    <button class="tab-btn" id="tab-users" onclick="switchtab('users')">👥 使用者管理</button>
+    <button class="tab-btn active" id="tab-stats" onclick="switchTab('stats')">📊 使用統計</button>
+    <button class="tab-btn" id="tab-online" onclick="switchTab('online')">🟢 在線狀態</button>
+    <button class="tab-btn" id="tab-users" onclick="switchTab('users')">👥 使用者管理</button>
   </div>
 
   <!-- 統計儀表板 -->
@@ -2717,7 +2717,6 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
   </div>
 
 </div><!-- end panel-users -->
-</DIV>
 
 </div>
 <script>
