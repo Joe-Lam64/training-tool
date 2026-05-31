@@ -2716,8 +2716,8 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
     </div>
   </div>
 
-</div><!-- end card -->
-  </div><!-- end panel-users -->
+</div><!-- end panel-users -->
+</DIV>
 
 </div>
 <script>
