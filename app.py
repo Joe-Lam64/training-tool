@@ -2145,12 +2145,22 @@ def api_courses():
 @app.route("/api/scrapers")
 @login_required
 def api_scrapers():
+    # 從現有課程資料取各協會最後更新時間
+    data = load_data()
+    courses = data.get("courses", [])
+    last_updated = {}
+    for c in courses:
+        code = c.get("_scraper_code", "")
+        if code and code not in last_updated:
+            last_updated[code] = data.get("last_updated", "")
+
     result = []
     for code, cls in SCRAPERS.items():
         result.append({
             "code": code,
             "name": cls.name,
             "desc": getattr(cls, "desc", ""),
+            "last_updated": last_updated.get(code, ""),
         })
     return jsonify(result)
 
@@ -3628,12 +3638,17 @@ async function loadScrapers() {
     const container = document.getElementById('instCardContainer');
     container.innerHTML = scrapers.map(s => {
       const capCode = s.code.charAt(0).toUpperCase() + s.code.slice(1);
+      const lastUp = s.last_updated ? s.last_updated.slice(0,16) : '尚未更新';
+      const isOld = s.last_updated ? (Date.now() - new Date(s.last_updated).getTime() > 7*24*60*60*1000) : true;
       return `
         <label class="inst-card checked" id="inst${capCode}" onclick="toggleInst('${s.code}')">
           <input type="checkbox" id="instCheck${capCode}" checked>
           <div style="flex:1;">
             <div class="label">${s.name}</div>
             <div class="desc">${s.desc || ''}</div>
+            <div style="font-size:10px;margin-top:4px;color:${isOld?'#E53E3E':'#38A169'};">
+              ${isOld?'⚠️':'✅'} 上次更新：${lastUp}
+            </div>
           </div>
           <button type="button" class="inst-update-btn"
             onclick="event.stopPropagation();event.preventDefault();updateOnly('${s.code}');"
