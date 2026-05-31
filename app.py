@@ -1922,7 +1922,10 @@ def load_data():
             cur.execute("SELECT courses, last_updated FROM course_cache WHERE id=1")
             row = cur.fetchone()
             if row and row["courses"]:
-                return {"courses": row["courses"], "last_updated": row["last_updated"]}
+                raw = row["courses"]
+                if isinstance(raw, dict) and "courses" in raw:
+                    return {"courses": raw["courses"], "scraper_updated": raw.get("scraper_updated", {}), "last_updated": row["last_updated"]}
+                return {"courses": raw, "last_updated": row["last_updated"]}
         except Exception as e:
             print(f"[PG] load_data 失敗: {e}")
         finally:
@@ -1943,7 +1946,7 @@ def save_data(data):
                 INSERT INTO course_cache (id, courses, last_updated)
                 VALUES (1, %s::JSONB, %s)
                 ON CONFLICT (id) DO UPDATE SET courses=EXCLUDED.courses, last_updated=EXCLUDED.last_updated
-            """, (json.dumps(data["courses"], ensure_ascii=False), data.get("last_updated")))
+            """, (json.dumps({"courses": data["courses"], "scraper_updated": data.get("scraper_updated", {})}, ensure_ascii=False), data.get("last_updated")))
             conn.commit()
             print(f"[PG] 課程資料已存入 Supabase ({len(data['courses'])} 筆)")
         except Exception as e:
@@ -2151,22 +2154,15 @@ def api_courses():
 @app.route("/api/scrapers")
 @login_required
 def api_scrapers():
-    # 從現有課程資料取各協會最後更新時間
     data = load_data()
-    courses = data.get("courses", [])
-    last_updated = {}
-    for c in courses:
-        code = c.get("_scraper_code", "")
-        if code and code not in last_updated:
-            last_updated[code] = data.get("last_updated", "")
-
+    scraper_updated = data.get("scraper_updated", {})
     result = []
     for code, cls in SCRAPERS.items():
         result.append({
             "code": code,
             "name": cls.name,
             "desc": getattr(cls, "desc", ""),
-            "last_updated": last_updated.get(code, ""),
+            "last_updated": scraper_updated.get(code, ""),
         })
     return jsonify(result)
 
