@@ -2017,8 +2017,14 @@ def update_courses(codes, force_refresh=False):
             try:
                 new_rows = [{**c, "_scraper_code": code} for c in scraper.scrape()]
                 all_courses.extend(new_rows)
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 # 增量儲存:每個協會跑完就先存一份,萬一後面爆掉至少保住前面
-                data = {"courses": all_courses, "last_updated": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+                data = {"courses": all_courses, "last_updated": now_str}
+                # 記錄各協會個別更新時間
+                if "scraper_updated" not in data:
+                    old = load_data()
+                    data["scraper_updated"] = old.get("scraper_updated", {})
+                data["scraper_updated"][code] = now_str
                 save_data(data)
                 print(f"=== {scraper.name} 完成,已存檔(本次 {len(new_rows)} 筆 / 累計 {len(all_courses)} 筆) ===")
             except Exception as e:
