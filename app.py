@@ -2646,6 +2646,17 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
 .msg.err { color: #C44569; }
 .add-form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 14px; background: #F8FBFD; border-radius: 10px; margin-top: 14px; }
 .add-form input { width: 130px; }
+.tab-btn {
+  padding: 10px 20px; border: none; border-radius: 20px; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 700;
+  background: rgba(255,255,255,0.5); color: #4A7BA7;
+  transition: all 0.2s;
+}
+.tab-btn:hover { background: rgba(255,255,255,0.8); }
+.tab-btn.active {
+  background: linear-gradient(135deg, #2980d4, #4AAEE0);
+  color: white; box-shadow: 0 4px 12px rgba(41,128,212,0.3);
+}
 </style></head>
 <body>
 <div class="header">
@@ -2660,7 +2671,15 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
 </div>
 <div class="container">
 
+  <!-- tab 導航 -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;">
+    <button class="tab-btn active" id="tab-stats" onclick="switchtab('stats')">📊 使用統計</button>
+    <button class="tab-btn" id="tab-online" onclick="switchtab('online')">🟢 在線狀態</button>
+    <button class="tab-btn" id="tab-users" onclick="switchtab('users')">👥 使用者管理</button>
+  </div>
+
   <!-- 統計儀表板 -->
+  <div id="panel-stats" class="tab-panel">
   <div class="card">
     <h2>📊 使用統計儀表板</h2>
     <div style="display:flex;gap:8px;margin-bottom:16px;">
@@ -2672,13 +2691,18 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
     <div id="statsDashboard">載入中...</div>
   </div>
 
+  </div><!-- end panel-stats -->
+
   <!-- 在線狀態 -->
+  <div id="panel-online" class="tab-panel" style="display:none;">
   <div class="card">
     <h2>🟢 目前在線狀態 <span id="onlineRefreshBtn" onclick="loadOnline()" style="font-size:12px;font-weight:400;color:#888;cursor:pointer;margin-left:8px;">🔄 刷新</span></h2>
     <div id="onlineList">載入中...</div>
   </div>
+  </div><!-- end panel-online -->
 
   <!-- 使用者管理 -->
+  <div id="panel-users" class="tab-panel" style="display:none;">
   <div class="card">
     <h2>👥 使用者管理</h2>
     <div id="userList">載入中...</div>
@@ -2692,9 +2716,19 @@ input:focus { outline: none; border-color: #4A90D9; box-shadow: 0 0 0 3px rgba(7
     </div>
   </div>
 
+</div><!-- end card -->
+  </div><!-- end panel-users -->
+
 </div>
 <script>
 let onlineUsernames = new Set();
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).style.display = 'block';
+  document.getElementById('tab-' + tab).classList.add('active');
+}
 
 async function loadOnline() {
   const r = await fetch('/api/admin/online_detail');
