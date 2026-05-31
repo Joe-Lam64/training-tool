@@ -1922,10 +1922,17 @@ def load_data():
             cur.execute("SELECT courses, last_updated FROM course_cache WHERE id=1")
             row = cur.fetchone()
             if row and row["courses"]:
-                raw = row["courses"]
-                if isinstance(raw, dict) and "courses" in raw:
-                    return {"courses": raw["courses"], "scraper_updated": raw.get("scraper_updated", {}), "last_updated": row["last_updated"]}
-                return {"courses": raw, "last_updated": row["last_updated"]}
+                lu = row["last_updated"] or ""
+                scraper_updated = {}
+                ts = lu
+                try:
+                    lu_obj = json.loads(lu) if lu and lu.startswith("{") else None
+                    if lu_obj:
+                        ts = lu_obj.get("ts", "")
+                        scraper_updated = lu_obj.get("scraper_updated", {})
+                except Exception:
+                    pass
+                return {"courses": row["courses"], "last_updated": ts, "scraper_updated": scraper_updated}
         except Exception as e:
             print(f"[PG] load_data 失敗: {e}")
         finally:
@@ -1946,7 +1953,7 @@ def save_data(data):
                 INSERT INTO course_cache (id, courses, last_updated)
                 VALUES (1, %s::JSONB, %s)
                 ON CONFLICT (id) DO UPDATE SET courses=EXCLUDED.courses, last_updated=EXCLUDED.last_updated
-            """, (json.dumps({"courses": data["courses"], "scraper_updated": data.get("scraper_updated", {})}, ensure_ascii=False), data.get("last_updated")))
+            """, (json.dumps(data["courses"], ensure_ascii=false), json.dumps({"ts": data.get("last_updated"), "scraper_updated": data.get("scraper_updated", {})})))
             conn.commit()
             print(f"[PG] 課程資料已存入 Supabase ({len(data['courses'])} 筆)")
         except Exception as e:
